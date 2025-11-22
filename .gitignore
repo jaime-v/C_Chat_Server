@@ -1,0 +1,13 @@
+# Build artifacts
+build/
+*.o
+*.out
+*.exe
+*.a
+*.so
+
+# Local previous versions
+previous/
+
+# Tests
+tests/
