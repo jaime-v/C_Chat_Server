@@ -104,6 +104,7 @@ int main(void){
         printf("[DEBUG - client]: Client quitting\n");
         shutdown(sfd, SHUT_RDWR);
         free(info);
+        info = NULL;
         close(sfd);
         free(buf_copy);
         break;
@@ -167,7 +168,9 @@ int main(void){
   }
   */
 
-  free(info);
+  if(info){
+    free(info);
+  }
   printf("\n\n[client] Joining with listen thread\n\n");
   pthread_join(thread, NULL);
   printf("\n\n[client] Joined with listen thread, returning now\n\n");

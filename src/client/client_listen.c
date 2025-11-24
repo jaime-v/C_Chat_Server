@@ -53,12 +53,6 @@ void *client_listen(void *args){
     // Error
   }
 
-  /*
-  if(msg_payload){
-    free(msg_payload);
-  }
-  */
-
   printf("\n\n[client_listen] End of client_listen\n\n");
   return NULL;
 }
