@@ -88,10 +88,9 @@ int main(void){
       char *saveptr;
       char *cmd = strtok_r(buf_copy, " ", &saveptr);
       char *rest_of_message = saveptr;
-
-      // Debug prints
-      printf("[client] cmd: %s\n", cmd);
-      printf("[client] rest_of_message: %s\n", rest_of_message);
+      if(rest_of_message != NULL){
+        printf("theres args in the cmd\n");
+      }
 
       // Make command lowercase
       size_t cmd_len = strlen(cmd);
@@ -102,12 +101,15 @@ int main(void){
       }
 
       if(strcmp(cmd, "/quit") == 0){
+        printf("[DEBUG - client]: Client quitting\n");
         shutdown(sfd, SHUT_RDWR);
         free(info);
         close(sfd);
         free(buf_copy);
         break;
       }
+
+      free(buf_copy);
     }
 
     // If we only read 1 byte, it is a \n, so don't send anything
@@ -136,26 +138,16 @@ int main(void){
       printf("Message continues\n");
       last_chunk_filled = true;
     }
-
-    /*
-     * Previously was a condition if we had perfect length input for BUF_SIZE, the only 
-     * character in this chunk would be \n, which we got rid of, but now it's \0, which we
-     * want to send
-     * (Nov 18, 2025)
-    if(bytes_read == 0){
-      continue;
-    }
-    */
  
     // Send header
-    printf("Sending header\n");
-    printf("len: %zu\n", header.msg_len);
     if(write_header(sfd, (const struct msg_header *)&header) == -1){
       handle_error("write");
     }
     
-    printf("Sending message\n");
     // Then we send payload
+    // Writing the entire message including the \0
+    // bytes_read includes the byte for the \0
+    // e.g. Hello\0 -- bytes_read = 6
     if(write_payload(sfd, (const char *)buf, (size_t)bytes_read) == -1){
       handle_error("write");
     }
@@ -175,9 +167,10 @@ int main(void){
   }
   */
 
-  printf("[client] Joining with listen thread\n");
+  free(info);
+  printf("\n\n[client] Joining with listen thread\n\n");
   pthread_join(thread, NULL);
-  printf("[client] Joined with listen thread, returning now\n");
+  printf("\n\n[client] Joined with listen thread, returning now\n\n");
 
   return 0;
 }

@@ -14,11 +14,8 @@ void *client_listen(void *args){
   char *msg_payload = NULL;
 
   while((bytes_read = read_header(info->sfd, &header)) > 0){
+    // printf("[DEBUG - client_listen]: Received header\n");
     size_t msg_len = ntohl((uint32_t)header.msg_len);
-
-    printf("Received header\n");
-    printf("Len: %zu\n", msg_len);
-
     if((bytes_read = read_payload(info->sfd, &msg_payload, msg_len)) <= 0){
       // Error
       printf("Couldnt read payload\n");
@@ -27,8 +24,9 @@ void *client_listen(void *args){
       break;
     }
 
-    msg_payload[msg_len - 1] = '\0';
-    printf("[client_listen] msg_payload: %s\n", msg_payload);
+    // printf("[DEBUG - client_listen]: Received payload\n");
+    // msg_payload[msg_len - 1] = '\0';
+    // printf("[DEBUG - client_listen]: Altered payload: %s\n", msg_payload);
     if(strcmp(msg_payload, "SERVER SHUTDOWN") == 0){
       printf("[client_listen] Shutting down\n");
       int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
@@ -37,7 +35,6 @@ void *client_listen(void *args){
       break;
     }
 
-    printf("Received payload\n");
     if(write_payload(STDOUT_FILENO, (const char *)msg_payload, (size_t)bytes_read) == -1){
       // Error
       printf("Couldnt write payload\n");
@@ -56,6 +53,12 @@ void *client_listen(void *args){
     // Error
   }
 
-  printf("[client_listen] End of client_listen\n");
+  /*
+  if(msg_payload){
+    free(msg_payload);
+  }
+  */
+
+  printf("\n\n[client_listen] End of client_listen\n\n");
   return NULL;
 }

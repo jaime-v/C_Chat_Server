@@ -15,15 +15,11 @@ int main(void){
   if(server_state_init(&state) == -1){
     handle_error("server_state_init");
   }
-  printf("[server.c] AFTER INIT SERVER FD -- Server state: %p\n", (void *)&state);
-  printf("[server.c] AFTER INIT SERVER FD -- Server fd: %p = %d\n", (void *)&state.server_fd, state.server_fd);
 
   // Init server socket -- pass a pointer to state.server_fd (pointer to int)
   if(init_server(&state.server_fd, &addr) == -1){
     handle_error("init_server");
   }
-  printf("[server.c] AFTER INIT SOCKET FD: %p\n", (void *)&state);
-  printf("[server.c] AFTER INIT SOCKET FD: %p = %d\n", (void *)&state.server_fd, state.server_fd);
 
   /*
   // Server loop logic

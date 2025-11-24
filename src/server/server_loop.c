@@ -22,16 +22,9 @@ int server_loop(struct server_state *state){
   struct sockaddr_in client_addr;
   socklen_t client_addr_size;
 
-  printf("[server_loop] state: %p\n", (void *)state);
-  printf("[server_loop] state->server_fd: %p = %d\n", (void *)&state->server_fd, state->server_fd);
   for(;;){
-    printf("[server_loop] state before accept: %p\n", (void *)state);
-    printf("[server_loop] vals before accept: %p = %d\n", (void *)&state->server_fd, state->server_fd);
     // Accept incoming client
     cfd = accept(state->server_fd, (struct sockaddr *)&client_addr, &client_addr_size);
-    printf("[server_loop] accepted cfd: %d\n", cfd);
-    printf("[server_loop] state after accept: %p\n", (void *)state);
-    printf("[server_loop] vals after accept: %p = %d\n", (void *)&state->server_fd, state->server_fd);
     if(cfd == -1){
       printf("[server_loop] Accept failed errno: %d\n", errno);
       if(server_shutdown == 1){
@@ -46,7 +39,6 @@ int server_loop(struct server_state *state){
       // We don't really want to return -1 on a failure, we want to continue trying to accept
       // This error is not worthy of a shutdown
     }
-    printf("[server_loop] Accepted new client: %p = %d\n", (void *)&cfd, cfd);
 
     // Create client_info struct
     struct client_info *info = (struct client_info *)malloc(sizeof(struct client_info));
@@ -71,9 +63,6 @@ int server_loop(struct server_state *state){
       printf("Couldn't add client\n");
     }
   }
-
-  printf("[server_loop] state after loop: %p\n", (void *)state);
-  printf("[server_loop] vals after loop: %p = %d\n", (void *)&state->server_fd, state->server_fd);
 
   char *shutdown_message = "SERVER SHUTDOWN";
   size_t shutdown_len = strlen(shutdown_message);

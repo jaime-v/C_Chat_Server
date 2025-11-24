@@ -1,4 +1,4 @@
-As of Nov 14:
+As of Nov 23:
 
 ## TODO:
 Refactor src/client/client.c
@@ -7,6 +7,10 @@ Handle errors properly
     Worker Functions should do one of two things:
         On nonfatal client error: Clean up client, return NULL; ending the thread.
         On fatal server error: Log and shutdown the server, then return.
+
+Change: make send not send over the null terminator, instead we send just the message, then malloc
+buffer with bytes\_read + 1, which i assume should be done in the protocol.c functions
+So we internally malloc msg\_len + 1, set payload[msg\_len] = '\0', then return bytes\_read
 
 Workers should not shut down the server unless it's by design like with a shutdown command.
 

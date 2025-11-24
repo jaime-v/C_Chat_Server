@@ -9,8 +9,6 @@
 #include <stdio.h> // DEBUG
 
 int server_state_init(struct server_state *state_out){
-  // DEBUG
-  printf("[server_state_init]: INIT SERVER_SHUTDOWN: %d\n", server_shutdown);
   if(!state_out) {
     return -1;
   }
@@ -31,13 +29,5 @@ int server_state_destroy(struct server_state *state){
     return -1;
   }
 
-  /* This should already be done
-  for(size_t i = 0; i < state->client_count; i++){
-    cleanup_client(state->client_list[i]);
-  }
-  if(close(state->server_fd) == -1){
-    return -1;
-  }
-  */
   return 0;
 }

@@ -7,10 +7,8 @@
 int init_server(int *sfd, struct sockaddr_in *addr){
   int status;
   
-  printf("[server_setup] sfd before: %p = %d\n", (void *)sfd, *sfd);
   status = create_inet_socket(sfd);
   if(status != 0) { return status; }
-  printf("[server_setup] sfd after: %p = %d\n", (void *)sfd, *sfd);
 
   status = setup_address(addr, LISTEN_ADDR);
   if(status != 0) { return status; }

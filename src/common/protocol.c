@@ -8,8 +8,9 @@ ssize_t read_header(int fd, struct msg_header *header_out){
 }
 
 ssize_t read_payload(int fd, char **payload_out, size_t msg_len){
-  *payload_out = (char *)malloc(msg_len);
+  *payload_out = (char *)malloc(msg_len + 1);
   if(*payload_out == NULL) { return -1; }
+  // payload_out[msg_len] = '\0';
   return read_all(fd, *payload_out, msg_len);
 }
 

@@ -46,11 +46,7 @@ enum CMD find_command(const char *cmd){
 void *handle_client(void *args){
   struct client_thread_args *arg = (struct client_thread_args *)args;
   struct server_state *state = arg->state;
-  printf("[handle_client] new client: state: %p\n", (void *)state);
-  printf("[handle_client] new client: state->server_fd: %p = %d\n", (void *)&state->server_fd, 
-      state->server_fd);
   struct client_info *info = arg->info;
-  printf("[handle_client] new client: info's cfd: %p = %d\n", (void *)&info->cfd, info->cfd);
   free(arg);
 
   ssize_t bytes_read;
@@ -62,9 +58,6 @@ void *handle_client(void *args){
     bool msg_done = header.msg_done;
     char *msg_payload = NULL;
 
-    // Debug
-    // printf("Received header with len: %zu\n", msg_len);
-
     if((bytes_read = read_payload(info->cfd, &msg_payload, msg_len)) <= 0){
       // Maybe add in a check for msg_len?
       // Anyhow, this shouldn't be possible because if, and only if, payload is > 0, we send a 
@@ -72,11 +65,7 @@ void *handle_client(void *args){
       break;
     }
 
-    // Debug
-    // printf("Received payload\n");
-    // Can use this one if we decide to send null terminated, or set up properly
-    // printf("Received payload: %s\n", msg_payload);
-
+    // printf("[DEBUG - handle_client]: Received payload: %s\n", msg_payload);
 
     // Append msg_payload to info->partial_msg and increase info->partial_len
     if(append_to_client_buffer(info, msg_payload, msg_len) == -1){
@@ -106,6 +95,10 @@ void *handle_client(void *args){
         char *saveptr;
         char *cmd = strtok_r(payload_copy, " ", &saveptr);
         char *rest_of_message = saveptr;
+
+
+        printf("[DEBUG - handle_client]:\n\tcmd: %s\n\trest: %s\n", cmd, rest_of_message);
+
  
         // Make command lowercase -- for case insensitive commands
         size_t cmd_len = strlen(cmd);
@@ -115,10 +108,6 @@ void *handle_client(void *args){
           }
         }
   
-        // Currently, we have the command and the rest of the message
-        printf("%s\n", cmd);
-        printf("%s\n", rest_of_message);
-
         // Execute command
         enum CMD command = find_command(cmd);
         printf("Command: %d\n", command);
@@ -131,14 +120,9 @@ void *handle_client(void *args){
           case CMD_SHUTDOWN:
             printf("Shutting down\n");
             server_shutdown = 1;
-            printf("[handle_client]: SERVER SHUTDOWN: %p = %d\n", (void *)&server_shutdown, 
-                server_shutdown);
-            printf("[handle_client]: Shutting down: state: %p\n", (void *)state);
-            printf("[handle_client]: Shutting down: fd: %p = %d\n", (void *)&state->server_fd,
-                state->server_fd);
             shutdown(state->server_fd, SHUT_RDWR);
-            if(close(state->server_fd) == -1){
-              printf("[handle_client] closing error\n");
+            if(close(state->server_fd) == -1) {
+              printf("[handle_client]: closing error\n");
             } else {
               printf("[handle_client]: close success\n");
             }
@@ -150,6 +134,18 @@ void *handle_client(void *args){
             break;
           case CMD_LIST:
             printf("Listing\n");
+            // Go through the client list, printing sending the names of each client to the sender
+            for(size_t i = 0; i < state->client_count; i++){
+              char *server_msg = state->client_list[i]->name;
+              size_t server_msg_len = state->client_list[i]->name_len;
+              server_send_message(info->cfd, server_msg, server_msg_len);
+
+              if(state->client_list[i] == info){
+                server_send_message(info->cfd, " <-- YOU\n", 9);
+              } else {
+                server_send_message(info->cfd, "\n", 1);
+              }
+            }
             break;
           case CMD_UNKNOWN:
           default:
@@ -157,9 +153,16 @@ void *handle_client(void *args){
             break;
         }
       } else {
+        printf("[DEBUG - handle_client]: Attempting to broadcast\n");
         // BROADCAST MESSAGE
         char *formatted_msg = format_chat_message(info);
-        size_t formatted_len = strlen(formatted_msg);
+        size_t formatted_len = strlen(formatted_msg) + 1; // + 1 for the null terminator 
+                                                          // Might not need it, it's just for 
+                                                          // string safety
+        printf("[DEBUG - handle_client]: Formatted msg:\n");
+        for(size_t i = 0; i < formatted_len; i++){
+          printf("%zu: %d -- %c\n", i, formatted_msg[i], formatted_msg[i]);
+        }
         if(broadcast(state, info, formatted_msg, formatted_len) == -1){
           // error
         }

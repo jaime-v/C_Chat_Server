@@ -31,3 +31,19 @@ int broadcast(struct server_state *state, struct client_info *sender, char *msg,
   
   return 0;
 }
+
+int server_send_message(int cfd, char *msg, size_t len){
+  struct msg_header out_header;
+  if(create_header(&out_header, len, MSG_TYPE_ADMIN, true) == -1){
+    return -1;
+  }
+
+  if(write_header(cfd, (const struct msg_header *)&out_header) == -1){
+    return -1;
+  }
+
+  if(write_payload(cfd, (const char *)msg, len) == -1){
+    return -1;
+  }
+  return 0;
+}

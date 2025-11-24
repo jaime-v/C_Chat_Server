@@ -12,7 +12,6 @@ int create_inet_socket(int *sfd_out){
   if(*sfd_out == -1){
     return ERR_SOCKET;
   }
-  printf("[common_setup] CREATED INET SOCKET: %p = %d\n", (void *)sfd_out, *sfd_out);
   return 0;
 }
 
