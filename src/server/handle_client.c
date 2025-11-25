@@ -59,27 +59,32 @@ void *handle_client(void *args){
     char *msg_payload = NULL; // Create the null buffer
     printf("[DEBUG - handle_client]: Reading header - msg_len: %zu\n", msg_len);
 
-    printf("[DEBUG - handle_client]: Reading payload\n");
-    // read_payload mallocs for msg_payload internally
-    if((bytes_read = read_payload(info->cfd, &msg_payload, msg_len)) <= 0){
-      // Maybe add in a check for msg_len?
-      // Anyhow, this shouldn't be possible because if, and only if, payload is > 0, we send a 
-      // header
-      break;
-    }
-
-    // printf("[DEBUG - handle_client]: Received payload (should be null terminated now): %s\n", msg_payload);
-    printf("[DEBUG - handle_client]: Reading header - msg_len: %zu\n", msg_len);
-    printf("[DEBUG - handle_client]: Individual bytes of msg_payload:\n");
-    for(size_t i = 0; i < msg_len + 1; i++){
-      printf("%zu: %d -- %c\n", i, msg_payload[i], msg_payload[i]);
-    }
-
-    // Append msg_payload to info->partial_msg and increase info->partial_len
-    // append_to_client_buffer frees msg_payload internally
-    printf("[DEBUG - handle_client]: Appending %zu bytes to client buffer\n", msg_len);
-    if(append_to_client_buffer(info, msg_payload, msg_len) == -1){
-      // error here
+    if(msg_len == 0){
+      printf("[DEBUG - handle_client]: Payload is 0\n");
+    } else {
+      printf("[DEBUG - handle_client]: Reading payload\n");
+      // read_payload mallocs for msg_payload internally
+      if((bytes_read = read_payload(info->cfd, &msg_payload, msg_len)) <= 0){
+        // Maybe add in a check for msg_len?
+        // Anyhow, this shouldn't be possible because if, and only if, payload is > 0, we send a 
+        // header
+        // Not true anymore, payload can be 0 because we dont include the null terminator anymore
+        break;
+      }
+  
+      // printf("[DEBUG - handle_client]: Received payload (should be null terminated now): %s\n", msg_payload);
+      printf("[DEBUG - handle_client]: Reading header - msg_len: %zu\n", msg_len);
+      printf("[DEBUG - handle_client]: Individual bytes of msg_payload:\n");
+      for(size_t i = 0; i < msg_len + 1; i++){
+        printf("%zu: %d -- %c\n", i, msg_payload[i], msg_payload[i]);
+      }
+  
+      // Append msg_payload to info->partial_msg and increase info->partial_len
+      // append_to_client_buffer frees msg_payload internally
+      printf("[DEBUG - handle_client]: Appending %zu bytes to client buffer\n", msg_len);
+      if(append_to_client_buffer(info, msg_payload, msg_len) == -1){
+        // error here
+      }
     }
 
     if(msg_done){
