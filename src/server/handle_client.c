@@ -108,8 +108,10 @@ void *handle_client(void *args){
         char *rest_of_message = saveptr;
 
 
-        printf("[DEBUG - handle_client]:\n\tcmd: %s\n\trest: %s\n", cmd, rest_of_message);
-
+        printf("[DEBUG - handle_client]:\n\tcmd: %s\n", cmd);
+        if(*rest_of_message == '\0'){
+          printf("No args\n");
+        }
  
         // Make command lowercase -- for case insensitive commands
         size_t cmd_len = strlen(cmd);
@@ -151,7 +153,7 @@ void *handle_client(void *args){
             char *whisper_target = strtok_r(NULL, " ", &saveptr);
             char *whisper_msg = saveptr;
             size_t whisper_len = strlen(whisper_msg);
-            if(whisper_len == 0){
+            if(*whisper_msg == '\0'){
               printf("No message for whisper\n");
               break;
             }
@@ -166,9 +168,11 @@ void *handle_client(void *args){
             }
             if(target == NULL){
               printf("Target not found\n");
+              break;
             }
 
             // Format whisper
+            // Uses malloc internally
             char *formatted_whisper = format_whisper_message(
                 (const struct client_info *)info, 
                 (const char *)whisper_msg, 
@@ -182,6 +186,7 @@ void *handle_client(void *args){
                   formatted_whisper_len) == -1){
               printf("error whispering to client\n");
             }
+            free(formatted_whisper);
 
             break;
           case CMD_LIST:
