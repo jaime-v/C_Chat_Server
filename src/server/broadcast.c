@@ -45,5 +45,24 @@ int server_send_message(int cfd, char *msg, size_t len){
   if(write_payload(cfd, (const char *)msg, len) == -1){
     return -1;
   }
+
+  return 0;
+}
+
+int client_send_direct_message(int cfd, char *msg, size_t msg_len){
+  struct msg_header out_header;
+
+  if(create_header(&out_header, msg_len, MSG_TYPE_NORMAL, true) == -1){
+    return -1;
+  }
+
+  if(write_header(cfd, (const struct msg_header *)&out_header) == -1){
+    return -1;
+  }
+
+  if(write_payload(cfd, (const char *)msg, msg_len) == -1){
+    return -1;
+  }
+
   return 0;
 }

@@ -142,6 +142,47 @@ void *handle_client(void *args){
             return NULL;
           case CMD_WHISPER:
             printf("Whispering\n");
+            if(rest_of_message == NULL){
+              printf("Not enough args\n");
+              break;
+            }
+
+            // Get whisper target's name and message to whisper
+            char *whisper_target = strtok_r(NULL, " ", &saveptr);
+            char *whisper_msg = saveptr;
+            size_t whisper_len = strlen(whisper_msg);
+            if(whisper_len == 0){
+              printf("No message for whisper\n");
+              break;
+            }
+            
+            // Find whisper target
+            struct client_info *target = NULL;
+            for(size_t i = 0; i < state->client_count; i++){
+              if(strcmp(whisper_target, state->client_list[i]->name) == 0){
+                target = state->client_list[i];
+                break;
+              }
+            }
+            if(target == NULL){
+              printf("Target not found\n");
+            }
+
+            // Format whisper
+            char *formatted_whisper = format_whisper_message(
+                (const struct client_info *)info, 
+                (const char *)whisper_msg, 
+                whisper_len);
+            size_t formatted_whisper_len = strlen(formatted_whisper);
+
+            // Send to target
+            if(client_send_direct_message(
+                  target->cfd, 
+                  formatted_whisper, 
+                  formatted_whisper_len) == -1){
+              printf("error whispering to client\n");
+            }
+
             break;
           case CMD_LIST:
             printf("Listing\n");

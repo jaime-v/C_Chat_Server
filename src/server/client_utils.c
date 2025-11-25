@@ -31,3 +31,20 @@ int clear_client_buffer(struct client_info *client){
   client->partial_cap = BUF_SIZE;
   return 0;
 }
+
+int store_client_name(struct client_info *client){
+  // Set partial_len to NAME_MAX if it exceeds NAME_MAX (cap length to be NAME_MAX - 1)
+  //    Since we don't include '\0' in the length
+  if(client->partial_len >= NAME_MAX){
+    client->partial_len = NAME_MAX - 1;
+  }
+
+  // Copy into name field
+  memcpy(client->name, client->partial_msg, client->partial_len);
+
+  // Set name length and last byte to be null
+  client->name_len = client->partial_len;
+  client->name[client->name_len] = '\0';
+  return 0;
+}
+

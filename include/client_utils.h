@@ -24,4 +24,14 @@ int append_to_client_buffer(struct client_info *client, char *payload, size_t by
  */
 int clear_client_buffer(struct client_info *client);
 
+/**
+ *  Copies name (stored in client's buffer) into client's name field.
+ *  If length of name > NAME_MAX, name is truncated to the first NAME_MAX bytes.
+ *
+ *  @param client   Pointer to client's info struct.
+ *
+ *  @return         0 on success -- might be void able
+ */
+int store_client_name(struct client_info *client);
+
 #endif
