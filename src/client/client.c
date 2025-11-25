@@ -127,9 +127,15 @@ int main(void){
       printf("Found end of message\n");
 
       // Sanitize input
-      // bytes_read = the length of the string
-      // we write, including the null terminator
-      buf[bytes_read - 1] = '\0';
+      // We read in the message + the \n character, but we only want to send message.
+      // We change the \n to a \0, but we don't send the \0
+      // Hello\n (6 bytes) 0,1,2,3,4,5 -- bytes_read = 6
+      // Change 5 (\n) into (\0)
+      // bytes_read -= 1 ->  -- bytes_read = 5
+      // buf[bytes_read] = \0
+      // or, just buf[--bytes_read] = '\0';
+      // and make sure to adjust the header again
+      buf[--bytes_read] = '\0';
       header.msg_len = htonl((uint32_t)bytes_read);
 
     } else {
@@ -146,9 +152,8 @@ int main(void){
     }
     
     // Then we send payload
-    // Writing the entire message including the \0
-    // bytes_read includes the byte for the \0
-    // e.g. Hello\0 -- bytes_read = 6
+    // bytes_read does not include the \0
+    // e.g. Hello\0 - bytes_read = 5, just for Hello
     if(write_payload(sfd, (const char *)buf, (size_t)bytes_read) == -1){
       handle_error("write");
     }

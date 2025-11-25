@@ -56,8 +56,11 @@ void *handle_client(void *args){
   while((bytes_read = read_header(info->cfd, &header)) > 0){
     size_t msg_len = ntohl((uint32_t)header.msg_len);
     bool msg_done = header.msg_done;
-    char *msg_payload = NULL;
+    char *msg_payload = NULL; // Create the null buffer
+    printf("[DEBUG - handle_client]: Reading header - msg_len: %zu\n", msg_len);
 
+    printf("[DEBUG - handle_client]: Reading payload\n");
+    // read_payload mallocs for msg_payload internally
     if((bytes_read = read_payload(info->cfd, &msg_payload, msg_len)) <= 0){
       // Maybe add in a check for msg_len?
       // Anyhow, this shouldn't be possible because if, and only if, payload is > 0, we send a 
@@ -65,9 +68,16 @@ void *handle_client(void *args){
       break;
     }
 
-    // printf("[DEBUG - handle_client]: Received payload: %s\n", msg_payload);
+    // printf("[DEBUG - handle_client]: Received payload (should be null terminated now): %s\n", msg_payload);
+    printf("[DEBUG - handle_client]: Reading header - msg_len: %zu\n", msg_len);
+    printf("[DEBUG - handle_client]: Individual bytes of msg_payload:\n");
+    for(size_t i = 0; i < msg_len + 1; i++){
+      printf("%zu: %d -- %c\n", i, msg_payload[i], msg_payload[i]);
+    }
 
     // Append msg_payload to info->partial_msg and increase info->partial_len
+    // append_to_client_buffer frees msg_payload internally
+    printf("[DEBUG - handle_client]: Appending %zu bytes to client buffer\n", msg_len);
     if(append_to_client_buffer(info, msg_payload, msg_len) == -1){
       // error here
     }
@@ -77,7 +87,8 @@ void *handle_client(void *args){
       // printf("We have: %s and %zu\n", info->partial_msg, info->partial_len);
 
       // Create copy of total payload
-      char *payload_copy = (char *)malloc(info->partial_len);
+      char *payload_copy = (char *)malloc(info->partial_len + 1);
+      payload_copy[info->partial_len] = '\0';
       memcpy(payload_copy, info->partial_msg, info->partial_len);
 
       // Control Flow processing the message
@@ -156,9 +167,8 @@ void *handle_client(void *args){
         printf("[DEBUG - handle_client]: Attempting to broadcast\n");
         // BROADCAST MESSAGE
         char *formatted_msg = format_chat_message(info);
-        size_t formatted_len = strlen(formatted_msg) + 1; // + 1 for the null terminator 
-                                                          // Might not need it, it's just for 
-                                                          // string safety
+        size_t formatted_len = strlen(formatted_msg);
+        printf("[DEBUG - handle_client]: Formatted_len: %zu\n", formatted_len);
         printf("[DEBUG - handle_client]: Formatted msg:\n");
         for(size_t i = 0; i < formatted_len; i++){
           printf("%zu: %d -- %c\n", i, formatted_msg[i], formatted_msg[i]);

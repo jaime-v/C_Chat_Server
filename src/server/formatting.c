@@ -34,8 +34,9 @@ char *format_chat_message(const struct client_info *client){
   //     Colon + Space
   //     Length of msg ( -1 for null terminator)
   //     \n + \0
-  size_t string_len = strlen(timestamp) + 1 + client->name_len - 1 + 2 + client->partial_len - 1 + 2;
+  size_t string_len = strlen(timestamp) + 1 + client->name_len + 2 + client->partial_len + 2;
   printf("[DEBUG - formatting]: client partial len: %zu\n", client->partial_len);
+  printf("[DEBUG - formatting]: client partial len: %zu\n", client->name_len);
 
   // Malloc buffer
   char *formatted_msg = (char *)malloc(string_len);
