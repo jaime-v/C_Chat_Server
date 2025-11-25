@@ -16,6 +16,21 @@ ssize_t read_payload(int fd, char **payload_out, size_t msg_len){
   (*payload_out)[msg_len] = '\0';
   // Return the number of bytes read into the buffer, with a maximum of msg_len bytes
   return read_all(fd, *payload_out, msg_len);
+
+  /* Potentially better version (More verbose, less working with double pointers)
+   *
+   * char *buf = malloc(msg_len) + 1;
+   * if(buf == NULL){ return -1; }
+   * ssize_t bytes_read = read_all(fd, buf, msg_len);
+   * if(bytes_read != msg_len){
+   *    free(buf);
+   *    return -1;
+   * }
+   * buf[msg_len] = '\0';
+   * *payload_out = buf;
+   * return bytes_read;
+   *
+   */
 }
 
 ssize_t read_packet(int fd, struct msg_header *header_out, char **payload_out){
