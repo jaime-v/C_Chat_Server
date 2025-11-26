@@ -5,38 +5,11 @@
 #include "common_header.h"
 #include "common_thread.h"
 #include "client_listen.h"
+#include "command.h"
+#include "client_handle_command.h"
+#include "utils.h"
 #include <string.h>
 #include <pthread.h>
-
-enum CMD {
-  CMD_QUIT,
-  CMD_LIST,
-  CMD_WHISPER,
-  CMD_SHUTDOWN,
-  CMD_UNKNOWN
-};
-
-struct command_entry {
-  const char *name;
-  enum CMD cmd;
-};
-
-static struct command_entry command_table[] = {
-  { "/quit", CMD_QUIT }, 
-  { "/list", CMD_LIST },
-  { "/whisper", CMD_WHISPER },
-  { "/shutdown", CMD_SHUTDOWN },
-  { NULL, CMD_UNKNOWN }
-};
-
-enum CMD find_command(const char *cmd){
-  for (int i = 0; command_table[i].name != NULL; i++){
-    if(strcmp(command_table[i].name, cmd) == 0){
-      return command_table[i].cmd;
-    }
-  }
-  return CMD_UNKNOWN;
-}
 
 int main(void){
   int sfd;
@@ -79,7 +52,7 @@ int main(void){
 
     // Check if msg is command
     if(buf[0] == '/'){
-      // Create a copy and null terminate it
+      // Create a copy and null terminate it -- malloc'd internally, need to free
       char *buf_copy = (char *)malloc((size_t)bytes_read);
       memcpy(buf_copy, buf, (size_t)bytes_read);
       buf_copy[bytes_read - 1] = '\0';
@@ -94,12 +67,17 @@ int main(void){
 
       // Make command lowercase
       size_t cmd_len = strlen(cmd);
+      make_lowercase(cmd, cmd_len);
+      /*
       for(size_t i = 1; i < cmd_len; i++){
         if(cmd[i] >= 'A' && cmd[i] <= 'Z'){
           cmd[i] += ('a' - 'A');
         }
       }
+      */
 
+      enum CMD_RES command_result = client_handle_command(sfd, info, cmd);
+      /*
       if(strcmp(cmd, "/quit") == 0){
         printf("[DEBUG - client]: Client quitting\n");
         shutdown(sfd, SHUT_RDWR);
@@ -109,8 +87,12 @@ int main(void){
         free(buf_copy);
         break;
       }
+      */
 
       free(buf_copy);
+      if(command_result == CMD_ERROR){
+        break;
+      }
     }
 
     // If we only read 1 byte, it is a \n, so don't send anything

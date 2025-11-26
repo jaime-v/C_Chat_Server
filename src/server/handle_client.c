@@ -8,40 +8,13 @@
 #include "client_list.h"
 #include "client_utils.h"
 #include "server_control.h"
+#include "command.h"
+#include "server_handle_command.h"
+#include "utils.h"
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
-enum CMD {
-  CMD_QUIT,
-  CMD_LIST,
-  CMD_WHISPER,
-  CMD_SHUTDOWN,
-  CMD_UNKNOWN
-};
-
-struct command_entry {
-  const char *name;
-  enum CMD cmd;
-};
-
-static struct command_entry command_table[] = {
-  { "/quit", CMD_QUIT }, 
-  { "/list", CMD_LIST },
-  { "/whisper", CMD_WHISPER },
-  { "/shutdown", CMD_SHUTDOWN },
-  { NULL, CMD_UNKNOWN }
-};
-
-enum CMD find_command(const char *cmd){
-  for (int i = 0; command_table[i].name != NULL; i++){
-    if(strcmp(command_table[i].name, cmd) == 0){
-      return command_table[i].cmd;
-    }
-  }
-  return CMD_UNKNOWN;
-}
 
 void *handle_client(void *args){
   struct client_thread_args *arg = (struct client_thread_args *)args;
@@ -106,7 +79,7 @@ void *handle_client(void *args){
       } else if (payload_copy[0] == '/'){
         // RUN COMMAND
         printf("COMMAND\n");
- 
+
         // Tokenize command from copy
         char *saveptr;
         char *cmd = strtok_r(payload_copy, " ", &saveptr);
@@ -120,13 +93,34 @@ void *handle_client(void *args){
  
         // Make command lowercase -- for case insensitive commands
         size_t cmd_len = strlen(cmd);
+        /*
         for(size_t i = 1; i < cmd_len; i++){
           if(cmd[i] >= 'A' && cmd[i] <= 'Z'){
             cmd[i] += ('a' - 'A');
           }
         }
+        */
+        make_lowercase(cmd, cmd_len);
+        // to_lowercase();
   
         // Execute command
+        // handle_command();
+        enum CMD_RES command_result = server_handle_command(
+            state,
+            info,
+            cmd,
+            saveptr
+        );
+        if(command_result == CMD_DISCONNECT || command_result == CMD_ERROR){
+          free(payload_copy);
+          remove_client_from_list(state, info);
+          return NULL;
+        }
+        if(command_result == CMD_WARNING){
+          printf("Something went wrong MONKA\n");
+        }
+
+        /*
         enum CMD command = find_command(cmd);
         printf("Command: %d\n", command);
         switch(command){
@@ -214,23 +208,28 @@ void *handle_client(void *args){
             printf("Unknown\n");
             break;
         }
+      */
       } else {
         printf("[DEBUG - handle_client]: Attempting to broadcast\n");
         // BROADCAST MESSAGE
         char *formatted_msg = format_chat_message(info);
         size_t formatted_len = strlen(formatted_msg);
+
+        // DEBUG
         printf("[DEBUG - handle_client]: Formatted_len: %zu\n", formatted_len);
         printf("[DEBUG - handle_client]: Formatted msg:\n");
         for(size_t i = 0; i < formatted_len; i++){
           printf("%zu: %d -- %c\n", i, formatted_msg[i], formatted_msg[i]);
         }
+
+
         if(broadcast(state, info, formatted_msg, formatted_len) == -1){
           // error
         }
         free(formatted_msg);
       }
 
-      // FREE COPY
+      // After processing a message, free the copy and reset partial_len
       free(payload_copy);
       info->partial_len = 0;
     }

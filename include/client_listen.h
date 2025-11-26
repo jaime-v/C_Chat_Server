@@ -1,9 +1,7 @@
 #ifndef CLIENT_LISTEN_H
 #define CLIENT_LISTEN_H
 
-struct listen_info {
-  int sfd;
-};
+#include "listen_info.h"
 
 /**
  * Thread worker function that reads from client socket and prints to stdout.

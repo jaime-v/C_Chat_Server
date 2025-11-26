@@ -8,32 +8,14 @@ Handle errors properly
         On nonfatal client error: Clean up client, return NULL; ending the thread.
         On fatal server error: Log and shutdown the server, then return.
 
-Change: make send not send over the null terminator, instead we send just the message, then malloc
-buffer with bytes\_read + 1, which i assume should be done in the protocol.c functions
-So we internally malloc msg\_len + 1, set payload[msg\_len] = '\0', then return bytes\_read
-
-Workers should not shut down the server unless it's by design like with a shutdown command.
-
-
-
 * Plan to do:
-    * Implement Client Commands
     * Implement Epoll
     * Create an actually good Github repo for this project
     * Make better error logs and handling (warning, info, error and continue, error and fail, etc.)
 
-
-Client Commands:
-    Send payload to server.
-    Before processing payload as a message, see if it is a command.
-    Tokenize the command.
-    Parse the command.
-    Implement command logic.
-        /quit should remove client from server state, broadcast announcement, clean up client
-        /shutdown should shut down the server, clean up all clients
-        /list list out all clients, only the client that used this command should see the list
-        /whisper NAME MESSAGE sends MESSAGE to client with name NAME, handle if user not found
-
+* Currently working on:
+    * Write error on client quit
+    * More refactoring into utils.[ch]
 
 ## BUGS:
 Issue: Clients Joining and Leaving

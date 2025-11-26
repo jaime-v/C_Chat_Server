@@ -92,6 +92,9 @@ char *format_whisper_message(const struct client_info *sender, const char *msg, 
       + 2);
 
   char *formatted_msg = (char *)malloc(string_len);
+  if(formatted_msg == NULL){
+    return NULL;
+  }
 
   // Format message into formatted_msg
   int chars_written = snprintf(
