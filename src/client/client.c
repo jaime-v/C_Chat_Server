@@ -68,29 +68,12 @@ int main(void){
       // Make command lowercase
       size_t cmd_len = strlen(cmd);
       make_lowercase(cmd, cmd_len);
-      /*
-      for(size_t i = 1; i < cmd_len; i++){
-        if(cmd[i] >= 'A' && cmd[i] <= 'Z'){
-          cmd[i] += ('a' - 'A');
-        }
-      }
-      */
 
-      enum CMD_RES command_result = client_handle_command(sfd, info, cmd);
-      /*
-      if(strcmp(cmd, "/quit") == 0){
-        printf("[DEBUG - client]: Client quitting\n");
-        shutdown(sfd, SHUT_RDWR);
-        free(info);
-        info = NULL;
-        close(sfd);
-        free(buf_copy);
-        break;
-      }
-      */
+      enum CMD_RES command_result = client_handle_command(sfd, /*info,*/ cmd);
 
       free(buf_copy);
-      if(command_result == CMD_ERROR){
+      if(command_result == CMD_ERROR || command_result == CMD_DISCONNECT){
+        printf("Disconnect or error\n");
         break;
       }
     }
@@ -130,14 +113,14 @@ int main(void){
  
     // Send header
     if(write_header(sfd, (const struct msg_header *)&header) == -1){
-      handle_error("write");
+      handle_error("write - header");
     }
     
     // Then we send payload
     // bytes_read does not include the \0
     // e.g. Hello\0 - bytes_read = 5, just for Hello
     if(write_payload(sfd, (const char *)buf, (size_t)bytes_read) == -1){
-      handle_error("write");
+      handle_error("write - payload");
     }
   }
 
@@ -155,9 +138,7 @@ int main(void){
   }
   */
 
-  if(info){
-    free(info);
-  }
+  free(info);
   printf("\n\n[client] Joining with listen thread\n\n");
   pthread_join(thread, NULL);
   printf("\n\n[client] Joined with listen thread, returning now\n\n");
