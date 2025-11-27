@@ -12,10 +12,10 @@ Handle errors properly
     * Implement Epoll
     * Create an actually good Github repo for this project
     * Make better error logs and handling (warning, info, error and continue, error and fail, etc.)
+    * Properly refactor some headers, functions that internally use malloc
 
 * Currently working on:
-    * Write error on client quit
-    * More refactoring into utils.[ch]
+    * Epoll
 
 ## BUGS:
 Issue: Clients Joining and Leaving
