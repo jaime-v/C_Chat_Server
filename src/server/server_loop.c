@@ -23,8 +23,6 @@
 
 int server_loop(struct server_state *state){
   int nfds, cfd;
-  struct sockaddr_in client_addr;
-  socklen_t client_addr_size;
 
   // EPOLL
   int epoll_fd = epoll_create1(0);
@@ -35,6 +33,10 @@ int server_loop(struct server_state *state){
 
   struct epoll_event ev, events[MAX_EVENTS];
   ev.events = EPOLLIN;
+  // EPOLLIN is when we have a read event
+  // EPOLLRDHUP is when we have a read direction being closed -- used when a client exits and 
+  //  exits gracefully
+  // EPOLLERR and EPOLLHUP is always a part of our events list
   ev.data.fd = state->server_fd;
 
   if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, state->server_fd, &ev) == -1){
@@ -45,34 +47,191 @@ int server_loop(struct server_state *state){
 
   for(;;){
     // EPOLL TIME
+    // Wait for events on the epoll_fd
     nfds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
     if(nfds == -1){
       perror("epoll_wait");
       return -1;
     }
 
+    // Once we have file descriptors with new activity, we do something
     for (int i = 0; i < nfds; i++){
+      // If the event came from our listening socket, we have a client to accept
       int fd = events[i].data.fd;
       if(fd == server_fd){
-        accept_new_client(epoll_fd, state->server_fd, state);
-      } else {
-        uint32_t new_event = events[i].events;
+        // function for later
+        // accept_new_client(state, epoll_fd);
 
-        if(new_event & EPOLLIN){
-          handle_client_read(epoll_fd, fd, state);
+        // call accept
+        int client_fd;
+        while((client_fd = accept(state->server_fd, NULL, NULL) != -1)){
+          // Do thing
+          // set new socket to nonblocking
+          fcntl(client_fd, F_SETFL, O_NONBLOCK);
+
+          // Create client_info struct
+          struct client_info *info = (struct client_info *)malloc(sizeof(struct client_info));
+          if(client_info_init(info, cfd) == -1){
+            perror("client_info_init");
+            return -1;
+          }
+
+          // Add client_fd to epoll
+          struct epoll_event ev = {0};
+          ev.events = EPOLLIN | EPOLLRDHUP;
+          ev.data.ptr = info; // Using ev.data.ptr changes what information epoll returns to us
+                              // if we just had ev.data.fd = client_fd, all we would get is the 
+                              // file descriptor, but we want to have the whole struct
+                              // We need to read state, check how many bytes we read, everything
+                              // epoll still monitors the fd, but it gives us the whole struct
+                              // to work with
+          epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev);
+
+          // Add client to global client list
+          if(add_client_to_list(state, info) == -1){
+            printf("Couldn't add client\n");
+          }
         }
+
+        // accept got a -1
+        if(client_fd == -1){
+          printf("[DEBUG - server_loop] failed\n");
+          // Check if errno == EAGAIN
+          if(errno == EAGAIN || errno == EWOULDBLOCK){
+            // This means that the socket is marked nonblocking and no
+            // connections are present to be accepted
+            // This signals that no more clients are waiting to be accepted
+          } else {
+            perror("accept");
+            continue;
+            // We have a real error in this case
+          }
+        }
+      } else {
+        // Otherwise the event is a bitmask for something
+        uint32_t new_event = events[i].events;
+        struct client_info *info = events[i].data.ptr;
+
+        // If we have EPOLLIN event, the socket has data for reading
+        if(new_event & EPOLLIN){
+          // handle_client_read(epoll_fd, fd, state);
+          // Instead of looping read_header, read_payload forever, we only read as much as
+          // available and resume reading on the next EPOLLIN event, if the message hasn't
+          // completed yet
+          // Once we have a full message, we do the same thing
+          //  process the message
+          //    store clients name
+          //    process commands
+          //    broadcast messages
+          
+          // Read from the cfd into a buffer
+          // if bytes_read > 0, process
+          // if bytes_read == 0, possibly payload of 0
+          // if errno == EAGAIN, then we are good, no more reads for now
+          // maybe check for errors.
+          while(1){
+            if(info->state == READ_HEADER){
+              ssize_t bytes_read = read(info->client_fd,
+                                        info->header_buffer + info->header_bytes_read,
+                                        sizeof(struct client_info) - info->header_bytes_read);
+              if(bytes_read == 0){
+                // Client closed connection cleanly
+                // Remove client
+              }
+
+              if(bytes_read < 0){
+                if(errno == EAGAIN || errno == EWOULDBLOCK){
+                  // No more data to read
+                } else {
+                  perror("Read header");
+                  // Disconnect client because we failed to read header
+                }
+              }
+
+              info->header_bytes_read += bytes_read;
+
+              if(info->header_bytes_read < sizeof(struct client_info)){
+                // Exit early because we need more header bytes
+              }
+
+              // If we reach this, then the full header is received and we can typecast
+              struct msg_header *header = (struct msg_header *)info->header_buffer;
+
+              info->expected_payload_len = header->msg_len;
+              info->msg_type = header->msg_type;
+              info->msg_done = header->msg_done;
+
+              info->payload_bytes_read = 0;
+
+              if(info->expected_payload_len > info->payload_cap){
+                info->payload_buffer = realloc(info->payload_buffer, info->expected_payload_len);
+                info->payload_cap = info->expected_payload_len;
+              }
+
+              info->state = READ_PAYLOAD;
+            } else if(info->state == READ_PAYLOAD){
+              ssize_t bytes_read = read(info->client_fd,
+                                        info->payload_buffer + info->payload_bytes_read,
+                                        info->expected_payload_len - info->payload_bytes_read);
+
+              if(bytes_read == 0){
+                // Payload is 0
+              }
+              
+              if(bytes_read < 0){
+                if(errno == EAGAIN || errno == EWOULDBLOCK){
+                  // No more data to read
+                } else {
+                  perror("Read payload");
+                  // Disconnect because we failed to read payload
+                }
+              }
+
+              info->payload_bytes_read += bytes_read;
+
+              if(info->payload_bytes_read < info->expected_payload_len){
+                // Exit early because we need more payload bytes
+              }
+      
+              // If we reach this then we process the message
+              if(info->msg_done){
+                // If message is done, then we can process it
+                // process_message
+                info->payload_bytes_read = 0;
+              }
+
+              info->header_bytes_read = 0;
+              info->state = READ_HEADER;
+
+            } else {
+              perror("What");
+            }
+          }
+
+        }
+
+        // If we have EPOLLOUT event, we can write to the socket
+        // Although, EPOLLOUT triggers every loop since most sockets are writable
         if(new_event & EPOLLOUT){
           handle_client_write(epoll_fd, fd, state);
         }
-        if(new_event & (EPOLLHUP | EPOLLERR)){
+
+        // If we have EPOLL Error or EPOLL Hangup, disconnect the client
+        if(new_event & (EPOLLHUP | EPOLLRDHUP | EPOLLERR)){
           disconnect_client(epoll_fd, fd, state);
+          // Remove client from epoll
+          // close the file descriptor
+          // Remove client from client list
+          // Free client info
+          // Which is basically our disconnect protocol already
         }
       }
     }
 
 
     // Accept incoming client
-    cfd = accept(state->server_fd, (struct sockaddr *)&client_addr, &client_addr_size);
+    // We don't need the client address or its length, so we can NULL those
+    cfd = accept(state->server_fd, NULL, NULL);
     if(cfd == -1){
       printf("[server_loop] Accept failed errno: %d\n", errno);
       if(server_shutdown == 1){

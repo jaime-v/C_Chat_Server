@@ -7,14 +7,47 @@
 
 #define NAME_MAX 64
 
+enum read_state {
+  READ_HEADER,
+  READ_PAYLOAD
+};
+
 struct client_info {
-  int cfd;
+  // Client's socket
+  int client_fd;
+
+  // Read state - reading a header or a payload
+  enum read_state state;
+
+  // Fixed buffer because header is a fixed size
+  uint8_t header_buffer[sizeof(struct msg_header)];
+  // How many bytes we've accumulated into header_buffer
+  size_t header_bytes_read;
+
+  // Extracted details from header
+  size_t expected_payload_len;
+  uint8_t msg_type;
+  uint8_t msg_done;
+  // After reading the header fully, we parse the header into the client_info fields
+
+  // Dynamic array to build up the message
+  uint8_t *payload_buffer;
+  // How many bytes we've accumulated into payload_buffer
+  size_t payload_bytes_read;
+  // The cap of our dynamic array
+  size_t payload_cap;
+
+  // Name and name_len for user
   char name[NAME_MAX];
   size_t name_len;
+
+  /*
+   * Obsolete now because of epoll architecture
   char *partial_msg;
   size_t partial_len;
   size_t partial_cap;
   pthread_t thread;
+  */
 };
 
 #endif

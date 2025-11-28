@@ -6,11 +6,13 @@
 int append_to_client_buffer(struct client_info *client, char *payload, size_t bytes_read){
   // If message len + bytes read from payload > message cap, expand message cap
   if(client->partial_len + bytes_read > client->partial_cap){
-    client->partial_msg = realloc(client->partial_msg, client->partial_cap + BUF_SIZE);
+    while(client->partial_cap < client->partial_len + bytes_read) { 
+      client->partial_cap *= 2; 
+    }
+    client->partial_msg = realloc(client->partial_msg, client->partial_cap);
     if(client->partial_msg == NULL){
       return -1;
     }
-    client->partial_cap += BUF_SIZE;
   }
 
   // Copy message into client struct
