@@ -58,13 +58,15 @@ int server_loop(struct server_state *state){
     for (int i = 0; i < nfds; i++){
       // If the event came from our listening socket, we have a client to accept
       int fd = events[i].data.fd;
-      if(fd == server_fd){
-        // function for later
-        // accept_new_client(state, epoll_fd);
-
+      if(fd == state->server_fd){
+        if(accept_new_clients(state, epoll_fd) == -1){
+          perror("server_loop - accept_new_clients");
+          continue;
+        }
+        /*
         // call accept
         int client_fd;
-        while((client_fd = accept(state->server_fd, NULL, NULL) != -1)){
+        while((client_fd = accept(state->server_fd, NULL, NULL)) != -1){
           // Do thing
           // set new socket to nonblocking
           fcntl(client_fd, F_SETFL, O_NONBLOCK);
@@ -107,6 +109,7 @@ int server_loop(struct server_state *state){
             // We have a real error in this case
           }
         }
+        */
       } else {
         // Otherwise the event is a bitmask for something
         uint32_t new_event = events[i].events;
