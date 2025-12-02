@@ -22,7 +22,7 @@ int get_timestamp(char *timestamp_out, size_t len);
  *
  * @return              The newly allocated buffer on success, NULL on failure.
  */ 
-char *copy_buffer(char *buf_src, size_t size);
+uint8_t *copy_buffer(uint8_t *buf_src, size_t size);
 
 
 /**

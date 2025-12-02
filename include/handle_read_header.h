@@ -3,6 +3,6 @@
 
 #include "server_state.h"
 
-int handle_read_header(struct client_info *info);
+int handle_read_header(struct server_state *state, struct client_info *info);
 
 #endif

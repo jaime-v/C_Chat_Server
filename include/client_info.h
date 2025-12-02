@@ -30,22 +30,24 @@ struct client_info {
   uint8_t msg_done;
   // After reading the header fully, we parse the header into the client_info fields
 
-  // Dynamic array to build up the message
-  uint8_t *payload_buffer;
+  // Buffer to receive payload
+  uint8_t payload_buffer[BUF_SIZE];
   // How many bytes we've accumulated into payload_buffer
   size_t payload_bytes_read;
-  // The cap of our dynamic array
-  size_t payload_cap;
 
   // Name and name_len for user
   char name[NAME_MAX];
   size_t name_len;
 
-  /*
-   * Obsolete now because of epoll architecture
-  char *partial_msg;
+  // Dynamic array to build up the message
+  uint8_t *partial_msg;
+  // Current length of dynamic array
   size_t partial_len;
+  // Cap of dynamic array
   size_t partial_cap;
+
+  uint8_t has_name;
+  /*
   pthread_t thread;
   */
 };

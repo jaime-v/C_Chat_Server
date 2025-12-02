@@ -38,14 +38,11 @@ int handle_client_read(struct server_state *state, struct client_info *info){
       info->msg_type = header->msg_type;
       info->msg_done = header->msg_done;
 
-      info->payload_bytes_read = 0;
-      if(info->expected_payload_len > info->payload_cap){
-        info->payload_buffer = realloc(info->payload_buffer, info->expected_payload_len);
-        info->payload_cap = info->expected_payload_len;
+      if(info->expected_payload_len > BUF_SIZE){
+        perror("Expected payload is greater than buf size");
       }
-
       info->state = READ_PAYLOAD; 
-      // return handle_read_header();
+      info->payload_bytes_read = 0;
     } else if (info->state == READ_PAYLOAD){
       ssize_t bytes_read = read(info->client,
                                 info->payload_buffer + info->payload_bytes_read,
@@ -74,20 +71,22 @@ int handle_client_read(struct server_state *state, struct client_info *info){
 
       // If we reach this point, then our payload should be complete
       // Put the stuff into the client's big buffer
+      if(append_to_client_buffer(info, info->payload_buffer, info->payload_bytes_read) == -1){
+        perror("append_to_client_buffer");
+      }
 
       // Check if the msg is done
       if(info->msg_done){
+        uint8_t *payload_copy = copy_buffer(info->partial_msg);
+
         // Process message
         process_payload(info);
       }
 
       // If it's not done, then we just switch back to reading the next header
       // Don't do anything with the payload yet
-
       info->state = READ_HEADER;
-
-
-      // return handle_read_payload();
+      info->payload_bytes_read = 0;
     } else{
       perror("This should not be possible");
       return -1;
