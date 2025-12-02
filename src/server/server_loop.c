@@ -7,6 +7,7 @@
 #include "broadcast.h"
 #include "process_payload.h"
 #include "accept_new_clients.h"
+#include "handle_client_read.h"
 #include "utils.h"
 #include "client_utils.h"
 #include <sys/socket.h>
@@ -80,11 +81,12 @@ int server_loop(struct server_state *state){
         if(new_event & EPOLLIN){
           // Probably make this into a function, then if we get a bad return or disconect, we
           // shutdown -- if we get good return, we can move on
+          if(handle_client_read(state, info) == -1){
+            perror("handle_client_read returned -1");
+          }
+          /*
           while(1){
             if(info->state == READ_HEADER){
-              printf("\n\nReading header\n");
-              printf("Have read %zu bytes so far\n", info->header_bytes_read);
-              printf("Expecting %zu bytes\n", sizeof(struct msg_header));
               ssize_t bytes_read = read(info->client_fd,
                                         info->header_buffer + info->header_bytes_read,
                                         sizeof(struct msg_header) - info->header_bytes_read);
@@ -139,11 +141,10 @@ int server_loop(struct server_state *state){
             } else if(info->state == READ_PAYLOAD){
               printf("\n\nReading payload\n");
               printf("Have read %zu bytes so far\n", info->payload_bytes_read);
-
               ssize_t bytes_read = read(info->client_fd,
                                         info->payload_buffer + info->payload_bytes_read,
                                         info->expected_payload_len - info->payload_bytes_read);
-
+              printf("Read %zu bytes\n", bytes_read);
               if(bytes_read == 0){
                 // Payload is 0
               }
@@ -197,6 +198,7 @@ int server_loop(struct server_state *state){
               perror("How do we read, but not read header or payload?");
             }
           }
+        */
 
         }
 

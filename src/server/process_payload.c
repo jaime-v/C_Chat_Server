@@ -9,10 +9,12 @@
 #include <stdio.h>
 
 int process_payload(struct server_state *state, struct client_info *info, uint8_t *payload_copy){
-  if(!info->has_name){
+  if(info->has_name == 0){
+    printf("STORING NAME\n");
     if(store_client_name(info) == -1){
       perror("store_client_name");
     }
+    info->has_name = 1;
   } else if (payload_copy[0] == '/'){
     printf("COMMAND DETECTED\n");
 
