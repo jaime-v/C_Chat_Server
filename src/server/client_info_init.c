@@ -12,7 +12,7 @@ int client_info_init(struct client_info *client_out, int client_fd){
   client_out->partial_len = 0;
   client_out->partial_cap = BUF_SIZE;
 
-  client_out->cfd = client_fd;
+  client_out->client_fd = client_fd;
   client_out->state = READ_HEADER;
 
   client_out->header_bytes_read = 0;

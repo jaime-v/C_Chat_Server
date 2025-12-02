@@ -1,11 +1,14 @@
 #include "client_info.h"
 #include "common_thread.h"
-#include "handle_client.h"
 #include "client_thread_args.h"
 #include "client_info_init.h"
 #include "client_list.h"
 #include "server_control.h"
 #include "broadcast.h"
+#include "process_payload.h"
+#include "accept_new_clients.h"
+#include "utils.h"
+#include "client_utils.h"
 #include <sys/socket.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -22,7 +25,7 @@
 #define MAX_EVENTS 10
 
 int server_loop(struct server_state *state){
-  int nfds, cfd;
+  int nfds;
 
   // EPOLL
   int epoll_fd = epoll_create1(0);
@@ -49,11 +52,14 @@ int server_loop(struct server_state *state){
   for(;;){
     // EPOLL TIME
     // Wait for events on the epoll_fd
+    printf("Going to start epoll_wait\n");
     nfds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
     if(nfds == -1){
       perror("epoll_wait");
       return -1;
     }
+    printf("Ending epoll_wait\n");
+    printf("We have %d events to look at\n", nfds);
 
     // Once we have file descriptors with new activity, we do something
     for (int i = 0; i < nfds; i++){
@@ -68,45 +74,52 @@ int server_loop(struct server_state *state){
         // Otherwise the event is a bitmask for something
         uint32_t new_event = events[i].events;
         struct client_info *info = events[i].data.ptr;
+        printf("Looking at info->client_fd: %d\n", info->client_fd);
 
         // If we have EPOLLIN event, the socket has data for reading
         if(new_event & EPOLLIN){
+          // Probably make this into a function, then if we get a bad return or disconect, we
+          // shutdown -- if we get good return, we can move on
           while(1){
             if(info->state == READ_HEADER){
+              printf("\n\nReading header\n");
+              printf("Have read %zu bytes so far\n", info->header_bytes_read);
+              printf("Expecting %zu bytes\n", sizeof(struct msg_header));
               ssize_t bytes_read = read(info->client_fd,
                                         info->header_buffer + info->header_bytes_read,
-                                        sizeof(struct client_info) - info->header_bytes_read);
+                                        sizeof(struct msg_header) - info->header_bytes_read);
+              printf("Read %zu bytes\n", bytes_read);
               if(bytes_read == 0){
                 // Client closed connection cleanly
                 // Remove client
                 perror("Client closed connection");
-                break;
+                return -1;
               }
 
               if(bytes_read < 0){
                 if(errno == EAGAIN || errno == EWOULDBLOCK){
                   // No more data to read
-                  perror("client fd would block")
-                  break;
+                  perror("client fd would block");
+                  return -1;
                 } else {
                   perror("Read header failed");
-                  break;
+                  return -1;
                   // Disconnect client because we failed to read header
                 }
               }
 
-              info->header_bytes_read += bytes_read;
+              info->header_bytes_read += (size_t)bytes_read;
 
-              if(info->header_bytes_read < sizeof(struct client_info)){
+              if(info->header_bytes_read < sizeof(struct msg_header)){
                 // Exit early because we need more header bytes
                 perror("Too little header bytes!");
-                break;
+                return -1;
               }
 
-              if(info->header_bytes_read > sizeof(struct client_info)){
+              if(info->header_bytes_read > sizeof(struct msg_header)){
                 // Exit early because we need more header bytes
                 perror("Too many header bytes! -- how");
-                break;
+                return -1;
               }
 
               // If we reach this, then the full header is received and we can typecast
@@ -124,6 +137,9 @@ int server_loop(struct server_state *state){
 
               info->state = READ_PAYLOAD;
             } else if(info->state == READ_PAYLOAD){
+              printf("\n\nReading payload\n");
+              printf("Have read %zu bytes so far\n", info->payload_bytes_read);
+
               ssize_t bytes_read = read(info->client_fd,
                                         info->payload_buffer + info->payload_bytes_read,
                                         info->expected_payload_len - info->payload_bytes_read);
@@ -135,37 +151,44 @@ int server_loop(struct server_state *state){
               if(bytes_read < 0){
                 if(errno == EAGAIN || errno == EWOULDBLOCK){
                   // No more data to read
+                  perror("client would block");
+                  return -1;
                 } else {
                   perror("Read payload");
                   // Disconnect because we failed to read payload
+                  return -1;
                 }
               }
 
-              info->payload_bytes_read += bytes_read;
+              info->payload_bytes_read += (size_t)bytes_read;
 
               if(info->payload_bytes_read < info->expected_payload_len){
                 // Exit early because we need more payload bytes
                 perror("Need more payload bytes");
-                break;
+                return -1;
               }
 
               if(info->payload_bytes_read > info->expected_payload_len){
                 perror("Somehow read more payload bytes than needed");
-                break;
+                return -1;
               }
 
               // If we reach this, then we have read the entire payload
               if(append_to_client_buffer(info) == -1){
                 perror("Couldn't append to client buffer");
-                break;
+                return -1;
               }
       
               if(info->msg_done){
                 // If message is done, then we can process it
                 // process_message
-                char *payload_copy = copy_buffer((char *)info->partial_msg, info->partial_len);
-                process_payload(info, (uint8_t *)payload_copy);
+                uint8_t *payload_copy = copy_buffer(info->partial_msg, info->partial_len);
+                int payload_result = process_payload(state, info, payload_copy);
                 free(payload_copy);
+                if(payload_result == -1){
+                  perror("Disconnect or error from payload processing");
+                  return -1;
+                }
               }
 
               info->header_bytes_read = 0;
@@ -177,6 +200,7 @@ int server_loop(struct server_state *state){
 
         }
 
+        /*
         // If we have EPOLLOUT event, we can write to the socket
         // Although, EPOLLOUT triggers every loop since most sockets are writable
         if(new_event & EPOLLOUT){
@@ -187,11 +211,12 @@ int server_loop(struct server_state *state){
         if(new_event & (EPOLLHUP | EPOLLRDHUP | EPOLLERR)){
           disconnect_client(epoll_fd, fd, state);
           // Remove client from epoll
-          // close the file descriptor
+          // close the client file descriptor
           // Remove client from client list
           // Free client info
           // Which is basically our disconnect protocol already
         }
+        */
       }
     }
   }

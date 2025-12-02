@@ -1,9 +1,14 @@
 #include "process_payload.h"
-
+#include "client_utils.h"
+#include "utils.h"
+#include "server_handle_command.h"
+#include "broadcast.h"
+#include "formatting.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
-int process_payload(struct client_info *info, uint8_t *payload_copy){
+int process_payload(struct server_state *state, struct client_info *info, uint8_t *payload_copy){
   if(!info->has_name){
     if(store_client_name(info) == -1){
       perror("store_client_name");
@@ -25,7 +30,7 @@ int process_payload(struct client_info *info, uint8_t *payload_copy){
 
     enum CMD_RES command_result = server_handle_command(state, info, cmd, saveptr);
     if(command_result == CMD_DISCONNECT || command_result == CMD_ERROR){
-      perror("Couldn't parse command");
+      perror("Disconnect or error");
       return -1;
     }
     if(command_result == CMD_WARNING){

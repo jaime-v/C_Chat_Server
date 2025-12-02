@@ -4,12 +4,12 @@
 #include <stdio.h>
 #include <unistd.h>
 
-enum CMD_RES client_handle_command(int sfd /*, struct listen_info *info*/ , char *cmd){
+enum CMD_RES client_handle_command(int sfd, char *cmd){
   enum CMD command = find_command(cmd);
   printf("[DEBUG - client_handle_command]: Command: %d\n", command);
   switch(command){
     case CMD_QUIT:
-      return handle_quit(sfd /*, info */);
+      return handle_quit(sfd);
     case CMD_UNKNOWN:
     default:
       return client_handle_unknown();

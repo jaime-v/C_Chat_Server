@@ -14,13 +14,13 @@ int broadcast(struct server_state *state, struct client_info *sender, char *msg,
       }
 
       if(write_header(
-          state->client_list[i]->cfd, 
+          state->client_list[i]->client_fd, 
           (const struct msg_header *)&out_header) == -1){
         return -1;
       }
 
       if(write_payload(
-          state->client_list[i]->cfd,
+          state->client_list[i]->client_fd,
           (const char *)msg,
           len) == -1){
         return -1;

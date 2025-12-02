@@ -4,6 +4,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <pthread.h>
+#include <stdint.h>
+#include "common_header.h"
+#include "protocol.h"
 
 #define NAME_MAX 64
 

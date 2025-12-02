@@ -69,7 +69,7 @@ int main(void){
       size_t cmd_len = strlen(cmd);
       make_lowercase(cmd, cmd_len);
 
-      enum CMD_RES command_result = client_handle_command(sfd, /*info,*/ cmd);
+      enum CMD_RES command_result = client_handle_command(sfd, cmd);
 
       free(buf_copy);
       if(command_result == CMD_ERROR || command_result == CMD_DISCONNECT){
@@ -111,6 +111,7 @@ int main(void){
       last_chunk_filled = true;
     }
  
+    printf("Sending header: %zu\n", sizeof(header));
     // Send header
     if(write_header(sfd, (const struct msg_header *)&header) == -1){
       handle_error("write - header");
@@ -131,12 +132,6 @@ int main(void){
   if(bytes_read == -1){
     printf("[client] read error\n");
   }
-
-  /*
-  if(close(sfd) == -1){
-    handle_error("close");
-  }
-  */
 
   free(info);
   printf("\n\n[client] Joining with listen thread\n\n");

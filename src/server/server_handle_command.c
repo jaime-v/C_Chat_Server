@@ -47,15 +47,15 @@ enum CMD_RES handle_list(struct server_state *state, struct client_info *user){
     size_t indicator_len = strlen(indicator);
 
     // Send the name of each client
-    server_send_message(user->cfd, server_msg, server_msg_len);
+    server_send_message(user->client_fd, server_msg, server_msg_len);
 
     // If the client using the command is the same client we see in the list
     if(state->client_list[i] == user){
       // Indicate that the user is this client
-      server_send_message(user->cfd, indicator, indicator_len);
+      server_send_message(user->client_fd, indicator, indicator_len);
     } else {
       // Otherwise, just make a newline for the next client
-      server_send_message(user->cfd, "\n", 1);
+      server_send_message(user->client_fd, "\n", 1);
     }
   }
   return CMD_OK;
@@ -115,7 +115,7 @@ enum CMD_RES handle_whisper(
 
   // Send to target
   if(client_send_direct_message(
-        target->cfd, 
+        target->client_fd, 
         formatted_whisper, 
         formatted_whisper_len) == -1){
     printf("error whispering to client\n");

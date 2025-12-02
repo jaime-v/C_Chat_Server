@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <sys/types.h>
+#include <stdint.h>
 
 /**
  * Gets timestamp and stores it in timestamp_out.

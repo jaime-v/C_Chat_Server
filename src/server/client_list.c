@@ -10,7 +10,7 @@ int add_client_to_list(struct server_state *state, struct client_info *client){
   } else {
     printf("Max Clients Reached\n");
     pthread_mutex_unlock(&state->client_mutex);
-    close(client->cfd);
+    close(client->client_fd);
     free(client);
     return -1;
   }
@@ -38,8 +38,8 @@ int cleanup_client(struct client_info *client){
     return -1;
   }
 
-  if (client->cfd >= 0){
-    if(close(client->cfd) == -1){
+  if (client->client_fd >= 0){
+    if(close(client->client_fd) == -1){
       return -1;
     }
     // client->fd = -1 -- good practice apparently?

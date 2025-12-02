@@ -1,10 +1,21 @@
 #include "handle_client_read.h"
+#include "process_payload.h"
+#include "utils.h"
+#include "client_utils.h"
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 int handle_client_read(struct server_state *state, struct client_info *info){
+  if(!state || !info){
+    return -1;
+  }
+  return 0;
+  /*
   // Loop because ?? idk
   for(;;){
     if(info->state == READ_HEADER){
-      ssize_t bytes_read = read(info->client,
+      ssize_t bytes_read = read(info->client_fd,
                                 info->header_buffer + info->header_bytes_read,
                                 sizeof(*info) - info->header_bytes_read);
       if(bytes_read == 0){
@@ -24,7 +35,7 @@ int handle_client_read(struct server_state *state, struct client_info *info){
         }
       }
 
-      info->header_bytes_read += bytes_read;
+      info->header_bytes_read += (size_t)bytes_read;
 
       if(info->header_bytes_read < sizeof(*info)){
         // Exit early because we need more header bytes
@@ -44,7 +55,7 @@ int handle_client_read(struct server_state *state, struct client_info *info){
       info->state = READ_PAYLOAD; 
       info->payload_bytes_read = 0;
     } else if (info->state == READ_PAYLOAD){
-      ssize_t bytes_read = read(info->client,
+      ssize_t bytes_read = read(info->client_fd,
                                 info->payload_buffer + info->payload_bytes_read,
                                 info->expected_payload_len - info->payload_bytes_read);
       if(bytes_read == 0){
@@ -62,7 +73,7 @@ int handle_client_read(struct server_state *state, struct client_info *info){
         }
       }
 
-      info->payload_bytes_read += bytes_read;
+      info->payload_bytes_read += (size_t) bytes_read;
 
       if(info->payload_bytes_read < info->expected_payload_len){
         // Exit early because we need more payload bytes
@@ -71,16 +82,20 @@ int handle_client_read(struct server_state *state, struct client_info *info){
 
       // If we reach this point, then our payload should be complete
       // Put the stuff into the client's big buffer
-      if(append_to_client_buffer(info, info->payload_buffer, info->payload_bytes_read) == -1){
+      if(append_to_client_buffer(info) == -1){
         perror("append_to_client_buffer");
       }
 
       // Check if the msg is done
       if(info->msg_done){
-        uint8_t *payload_copy = copy_buffer(info->partial_msg);
+        uint8_t *payload_copy = copy_buffer(info->partial_msg, info->partial_len);
 
         // Process message
-        process_payload(info);
+        int payload_result = process_payload(state, info, payload_copy);
+        free(payload_copy);
+        if(payload_result == -1){
+          perror("Disconnect");
+        }
       }
 
       // If it's not done, then we just switch back to reading the next header
@@ -92,4 +107,5 @@ int handle_client_read(struct server_state *state, struct client_info *info){
       return -1;
     }
   }
+*/
 }

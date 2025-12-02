@@ -1,10 +1,14 @@
 #include "accept_new_clients.h"
 #include "client_info_init.h"
 #include "client_list.h"
+#include "common_header.h"
+#include "protocol.h"
 #include <sys/socket.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/epoll.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 int accept_new_clients(struct server_state *state, int epoll_fd){
   // Apparently we should for loop this? but not sure why
@@ -15,11 +19,13 @@ int accept_new_clients(struct server_state *state, int epoll_fd){
   for(;;){
     // Accept new client
     int client_fd = accept(state->server_fd, NULL, NULL);
+    printf("[accept_new_clients]: Accepted client_fd: %d\n", client_fd);
 
     // Check client errors
     if(client_fd == -1){
       if(errno == EAGAIN || errno == EWOULDBLOCK){
         // We have no more clients to accept
+        perror("No more clients to accept");
         return 0;
       } else {
         // We have an actual error
