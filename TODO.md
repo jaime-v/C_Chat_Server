@@ -16,6 +16,8 @@ Handle errors properly
 
 * Currently working on:
     * Epoll
+    * Buffers don't reset between messages, so we get John -> JohnHello -> JohnHelloNext message
+    * Also, disconnecting a client with ctrl+c will cause infinite loop on server end
 
 ## BUGS:
 Issue: Clients Joining and Leaving
