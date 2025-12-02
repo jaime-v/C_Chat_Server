@@ -7,6 +7,11 @@
 #include <sys/epoll.h>
 
 int accept_new_clients(struct server_state *state, int epoll_fd){
+  // Apparently we should for loop this? but not sure why
+  // Supposedly we can have multiple clients wanting to connect but wouldnt that just cause
+  // multiple events?
+  // How can one event cause multiple connections?
+
   for(;;){
     // Accept new client
     int client_fd = accept(state->server_fd, NULL, NULL);

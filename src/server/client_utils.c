@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-int append_to_client_buffer(struct client_info *client, char *payload, size_t bytes_read){
+int append_to_client_buffer(struct client_info *client){
   // If message len + bytes read from payload > message cap, expand message cap
-  if(client->partial_len + bytes_read > client->partial_cap){
+  if(client->partial_len + client->payload_bytes_read > client->partial_cap){
     while(client->partial_cap < client->partial_len + bytes_read) { 
       client->partial_cap *= 2; 
     }
@@ -16,11 +16,10 @@ int append_to_client_buffer(struct client_info *client, char *payload, size_t by
   }
 
   // Copy message into client struct
-  memcpy(client->partial_msg + client->partial_len, payload, bytes_read);
-  client->partial_len += bytes_read;
-
-  // Free payload when we are done copying
-  free(payload);
+  memcpy(client->partial_msg + client->partial_len, 
+         client->payload_buffer, 
+         client->payload_bytes_read);
+  client->partial_len += client->payload_bytes_read;
   return 0;
 }
 

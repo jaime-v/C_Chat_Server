@@ -38,6 +38,9 @@ struct client_info {
   // Name and name_len for user
   char name[NAME_MAX];
   size_t name_len;
+  
+  // Flag for having name
+  uint8_t has_name;
 
   // Dynamic array to build up the message
   uint8_t *partial_msg;
@@ -46,7 +49,6 @@ struct client_info {
   // Cap of dynamic array
   size_t partial_cap;
 
-  uint8_t has_name;
   /*
   pthread_t thread;
   */

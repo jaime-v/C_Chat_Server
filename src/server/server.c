@@ -21,13 +21,6 @@ int main(void){
     handle_error("init_server");
   }
 
-  /*
-  // Server loop logic
-  if(server_loop(&state, sfd) == -1){
-    fprintf(stderr, "SERVER EXITED WITH ERROR\n");
-  }
-  */
-
   // Server loop logic
   if(server_loop(&state) == -1){
     fprintf(stderr, "SERVER EXITED WITH ERROR\n");
