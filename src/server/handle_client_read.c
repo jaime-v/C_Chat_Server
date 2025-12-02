@@ -125,6 +125,8 @@ int handle_client_read(struct server_state *state, struct client_info *info){
         } else {
           printf("payload has been processed: %d\n", payload_result);
         }
+        // Reset partial_len to 0 so we can overwrite the buffer for next message
+        info->partial_len = 0;
       }
 
       // If it's not done, then we just switch back to reading the next header
