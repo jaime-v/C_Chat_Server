@@ -6,7 +6,6 @@
 
 enum CMD_RES client_handle_command(int sfd, char *cmd){
   enum CMD command = find_command(cmd);
-  printf("[DEBUG - client_handle_command]: Command: %d\n", command);
   switch(command){
     case CMD_QUIT:
       return handle_quit(sfd);

@@ -12,7 +12,7 @@ int process_payload(struct server_state *state, struct client_info *info, uint8_
   if(info->has_name == 0){
     printf("STORING NAME\n");
     if(store_client_name(info) == -1){
-      perror("store_client_name");
+      perror("[DEBUG - process_payload]:store_client_name");
     }
     info->has_name = 1;
   } else if (payload_copy[0] == '/'){
@@ -26,24 +26,22 @@ int process_payload(struct server_state *state, struct client_info *info, uint8_
     if(*rest_of_message == '\0'){
       printf("No args\n");
     }
-
     size_t cmd_len = strlen(cmd);
     make_lowercase(cmd, cmd_len);
 
     enum CMD_RES command_result = server_handle_command(state, info, cmd, saveptr);
     if(command_result == CMD_DISCONNECT || command_result == CMD_ERROR){
-      perror("Disconnect or error");
+      perror("[DEBUG - process_payload]: Disconnect or error");
       return -1;
     }
     if(command_result == CMD_WARNING){
-      perror("Something went wrong MONKA");
+      perror("[DEBUG - process_payload]:Something went wrong MONKA");
     }
   } else {
-    printf("ONLY OTHER COMMAND IS BROADCAST\n");
     char *formatted_msg = format_chat_message(info);
     size_t formatted_len = strlen(formatted_msg);
     if(broadcast(state, info, formatted_msg, formatted_len) == -1){
-      perror("Broadcasting error");
+      perror("[DEBUG - process_payload]:Broadcasting error");
     }
     free(formatted_msg);
   }

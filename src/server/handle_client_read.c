@@ -10,13 +10,10 @@
 int handle_client_read(struct server_state *state, struct client_info *info){
   for(;;){
     if(info->state == READ_HEADER){
-      printf("\n\nReading header\n");
-      printf("Have read %zu bytes so far\n", info->header_bytes_read);
-      printf("Expecting %zu bytes\n", sizeof(struct msg_header));
       ssize_t bytes_read = read(info->client_fd,
                                 info->header_buffer + info->header_bytes_read,
                                 sizeof(struct msg_header) - info->header_bytes_read);
-      printf("Read %zu bytes\n", bytes_read);
+      printf("SIZEOF msg header: %zu\n", sizeof(struct msg_header));
       if(bytes_read == 0){
         // Shouldn't be happening unless we get a shutdown
         // Assume client closed connection
@@ -24,6 +21,7 @@ int handle_client_read(struct server_state *state, struct client_info *info){
         perror("Read 0 bytes from header, sending -1 to server_loop");
         return -1;
       }
+
 
       if(bytes_read < 0){
         if(errno == EAGAIN || errno == EWOULDBLOCK){
@@ -57,6 +55,13 @@ int handle_client_read(struct server_state *state, struct client_info *info){
       info->msg_type = header->msg_type;
       info->msg_done = header->msg_done;
 
+      printf("[DEBUG - handle_client_read]: Read in header with: len=%zu and type=%u and done=%d\n", 
+          info->expected_payload_len, info->msg_type, info->msg_done);
+      if(info->expected_payload_len > 16384){
+        printf("[DEBUG - handle_client_read]: This is a big expected payload from %d\n", info->client_fd);
+        return -2;
+      }
+
       if(info->expected_payload_len > BUF_SIZE){
         // This shouldnt be possible
         perror("Expected payload is greater than buf size monka");
@@ -67,13 +72,9 @@ int handle_client_read(struct server_state *state, struct client_info *info){
       info->payload_bytes_read = 0;
 
     } else if (info->state == READ_PAYLOAD){
-      printf("\n\nReading payload\n");
-      printf("Have read %zu bytes so far\n", info->payload_bytes_read);
-      printf("Expecting %zu bytes\n", info->expected_payload_len);
       ssize_t bytes_read = read(info->client_fd,
                                 info->payload_buffer + info->payload_bytes_read,
                                 info->expected_payload_len - info->payload_bytes_read);
-      printf("Read %zu bytes\n", bytes_read);
       if(bytes_read == 0){
         // Possibility of payload with 0 bytes
         // So we probably just leave it
@@ -113,17 +114,13 @@ int handle_client_read(struct server_state *state, struct client_info *info){
 
       // Check if the msg is done
       if(info->msg_done){
-        printf("Message is done\n");
-        uint8_t *payload_copy = copy_buffer(info->partial_msg, info->partial_len);
-
+        uint8_t *payload_copy = copy_buffer(info->partial_msg, info->partial_len + 1);
         // Process message
         int payload_result = process_payload(state, info, payload_copy);
         free(payload_copy);
         if(payload_result == -1){
-          perror("Disconnect");
+          perror("[DEBUG - handle_client_read]: Disconnect");
           return -1;
-        } else {
-          printf("payload has been processed: %d\n", payload_result);
         }
         // Reset partial_len to 0 so we can overwrite the buffer for next message
         info->partial_len = 0;

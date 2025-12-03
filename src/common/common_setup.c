@@ -3,10 +3,6 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-
-// Debug
-#include <stdio.h>
-
 int create_inet_socket(int *sfd_out){
   *sfd_out = socket(AF_INET, SOCK_STREAM, 0);
   if(*sfd_out == -1){

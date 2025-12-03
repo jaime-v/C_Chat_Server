@@ -8,11 +8,13 @@
 #define MSG_TYPE_ADMIN  0x01
 #define MSG_TYPE_RANDOM 0x02
 
+#pragma pack(push, 1)
 struct msg_header {
-  size_t msg_len;
+  uint32_t msg_len;
   uint8_t msg_type;
-  bool msg_done;
+  uint8_t msg_done;
 };
+#pragma pack(pop)
 
 /**
  * Reads a header from socket fd.

@@ -4,7 +4,7 @@
 #include "client_info.h"
 #include <pthread.h>
 
-#define MAX_CLIENTS 10
+#define MAX_CLIENTS 1000
 
 struct server_state {
   int server_fd;

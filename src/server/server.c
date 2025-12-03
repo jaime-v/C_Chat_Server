@@ -23,7 +23,7 @@ int main(void){
 
   // Server loop logic
   if(server_loop(&state) == -1){
-    fprintf(stderr, "SERVER EXITED WITH ERROR\n");
+    perror("SERVER EXITED WITH ERROR");
   }
 
   // Clean up server state

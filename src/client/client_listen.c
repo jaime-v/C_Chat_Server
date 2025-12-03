@@ -1,5 +1,6 @@
 #include "client_listen.h"
 #include "protocol.h"
+#include "client_control.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -29,9 +30,9 @@ void *client_listen(void *args){
     // printf("[DEBUG - client_listen]: Altered payload: %s\n", msg_payload);
     if(strcmp(msg_payload, "SERVER SHUTDOWN") == 0){
       printf("[client_listen] Shutting down\n");
-      int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-      fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
-      // close(STDIN_FILENO);
+      client_shutdown = 1;
+      free(msg_payload);
+      free(info);
       break;
     }
 
@@ -40,6 +41,7 @@ void *client_listen(void *args){
       printf("Couldnt write payload\n");
       free(msg_payload);
       free(info);
+      client_shutdown = 1;
       break;
     }
     free(msg_payload);

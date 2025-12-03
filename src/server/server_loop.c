@@ -50,17 +50,14 @@ int server_loop(struct server_state *state){
   }
 
 
-  for(;;){
+  while(server_shutdown != 1){
     // EPOLL TIME
     // Wait for events on the epoll_fd
-    printf("Going to start epoll_wait\n");
     nfds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
     if(nfds == -1){
       perror("epoll_wait");
       return -1;
     }
-    printf("Ending epoll_wait\n");
-    printf("We have %d events to look at\n", nfds);
 
     // Once we have file descriptors with new activity, we do something
     for (int i = 0; i < nfds; i++){
@@ -75,148 +72,42 @@ int server_loop(struct server_state *state){
         // Otherwise the event is a bitmask for something
         uint32_t new_event = events[i].events;
         struct client_info *info = events[i].data.ptr;
-        printf("Looking at info->client_fd: %d\n", info->client_fd);
 
         // If we have EPOLLIN event, the socket has data for reading
         if(new_event & EPOLLIN){
           // Probably make this into a function, then if we get a bad return or disconect, we
           // shutdown -- if we get good return, we can move on
-          if(handle_client_read(state, info) == -1){
-            perror("handle_client_read returned -1");
-          }
-          /*
-          while(1){
-            if(info->state == READ_HEADER){
-              ssize_t bytes_read = read(info->client_fd,
-                                        info->header_buffer + info->header_bytes_read,
-                                        sizeof(struct msg_header) - info->header_bytes_read);
-              printf("Read %zu bytes\n", bytes_read);
-              if(bytes_read == 0){
-                // Client closed connection cleanly
-                // Remove client
-                perror("Client closed connection");
-                return -1;
-              }
-
-              if(bytes_read < 0){
-                if(errno == EAGAIN || errno == EWOULDBLOCK){
-                  // No more data to read
-                  perror("client fd would block");
-                  return -1;
-                } else {
-                  perror("Read header failed");
-                  return -1;
-                  // Disconnect client because we failed to read header
-                }
-              }
-
-              info->header_bytes_read += (size_t)bytes_read;
-
-              if(info->header_bytes_read < sizeof(struct msg_header)){
-                // Exit early because we need more header bytes
-                perror("Too little header bytes!");
-                return -1;
-              }
-
-              if(info->header_bytes_read > sizeof(struct msg_header)){
-                // Exit early because we need more header bytes
-                perror("Too many header bytes! -- how");
-                return -1;
-              }
-
-              // If we reach this, then the full header is received and we can typecast
-              struct msg_header *header = (struct msg_header *)info->header_buffer;
-
-              info->expected_payload_len = header->msg_len;
-              info->msg_type = header->msg_type;
-              info->msg_done = header->msg_done;
-
-              info->payload_bytes_read = 0;
-
-              if(info->expected_payload_len > BUF_SIZE){
-                perror("expected_payload_len > BUF_SIZE somehow");
-              }
-
-              info->state = READ_PAYLOAD;
-            } else if(info->state == READ_PAYLOAD){
-              printf("\n\nReading payload\n");
-              printf("Have read %zu bytes so far\n", info->payload_bytes_read);
-              ssize_t bytes_read = read(info->client_fd,
-                                        info->payload_buffer + info->payload_bytes_read,
-                                        info->expected_payload_len - info->payload_bytes_read);
-              printf("Read %zu bytes\n", bytes_read);
-              if(bytes_read == 0){
-                // Payload is 0
-              }
-              
-              if(bytes_read < 0){
-                if(errno == EAGAIN || errno == EWOULDBLOCK){
-                  // No more data to read
-                  perror("client would block");
-                  return -1;
-                } else {
-                  perror("Read payload");
-                  // Disconnect because we failed to read payload
-                  return -1;
-                }
-              }
-
-              info->payload_bytes_read += (size_t)bytes_read;
-
-              if(info->payload_bytes_read < info->expected_payload_len){
-                // Exit early because we need more payload bytes
-                perror("Need more payload bytes");
-                return -1;
-              }
-
-              if(info->payload_bytes_read > info->expected_payload_len){
-                perror("Somehow read more payload bytes than needed");
-                return -1;
-              }
-
-              // If we reach this, then we have read the entire payload
-              if(append_to_client_buffer(info) == -1){
-                perror("Couldn't append to client buffer");
-                return -1;
-              }
-      
-              if(info->msg_done){
-                // If message is done, then we can process it
-                // process_message
-                uint8_t *payload_copy = copy_buffer(info->partial_msg, info->partial_len);
-                int payload_result = process_payload(state, info, payload_copy);
-                free(payload_copy);
-                if(payload_result == -1){
-                  perror("Disconnect or error from payload processing");
-                  return -1;
-                }
-              }
-
-              info->header_bytes_read = 0;
-              info->state = READ_HEADER;
-            } else {
-              perror("How do we read, but not read header or payload?");
+          int read_status = 0;
+          if((read_status = handle_client_read(state, info)) < 0){
+            if(read_status == -1){
+              printf("[DEBUG - server_loop]: handle_client_read returned -1\n");
+            }
+            if(read_status == -2){
+              printf("[DEBUG - server_loop]: Client is sending too large of a buffer\n");
+              epoll_ctl(epoll_fd, EPOLL_CTL_DEL, info->client_fd, NULL);
+              remove_client_from_list(state, info);
             }
           }
-        */
-
-        }
-
-        /*
-        // If we have EPOLLOUT event, we can write to the socket
-        // Although, EPOLLOUT triggers every loop since most sockets are writable
-        if(new_event & EPOLLOUT){
-          handle_client_write(epoll_fd, fd, state);
         }
 
         // If we have EPOLL Error or EPOLL Hangup, disconnect the client
         if(new_event & (EPOLLHUP | EPOLLRDHUP | EPOLLERR)){
-          disconnect_client(epoll_fd, fd, state);
+          perror("WE HAVE A DISCONNECT");
+          epoll_ctl(epoll_fd, EPOLL_CTL_DEL, info->client_fd, NULL);
+          remove_client_from_list(state, info);
+          // disconnect_client(epoll_fd, fd, state);
           // Remove client from epoll
           // close the client file descriptor
           // Remove client from client list
           // Free client info
           // Which is basically our disconnect protocol already
+        }
+        
+        /*
+        // If we have EPOLLOUT event, we can write to the socket
+        // Although, EPOLLOUT triggers every loop since most sockets are writable
+        if(new_event & EPOLLOUT){
+          handle_client_write(epoll_fd, fd, state);
         }
         */
       }
@@ -227,12 +118,17 @@ int server_loop(struct server_state *state){
   size_t shutdown_len = strlen(shutdown_message);
   broadcast(state, NULL, shutdown_message, shutdown_len);
 
-  if(remove_all_clients(state) == -1){
+  // Shutdown for server
+  epoll_ctl(epoll_fd, EPOLL_CTL_DEL, state->server_fd, NULL);
+  shutdown(state->server_fd, SHUT_RDWR);
+  if(close(state->server_fd) == -1){
+    perror("close error on server_fd");
+  }
+
+  if(remove_all_clients(state, epoll_fd) == -1){
     // Which we might not want? we want to retry this
     // return -1;
     perror("remove_all_clients");
   }
-
-  printf("[server_loop] holy shit we reached the end\n");
   return 0;
 }

@@ -19,8 +19,6 @@ char *format_chat_message(const struct client_info *client){
   //     Length of msg ( -1 for null terminator)
   //     \n + \0
   size_t string_len = strlen(timestamp) + 1 + client->name_len + 2 + client->partial_len + 2;
-  printf("[DEBUG - formatting]: client partial len: %zu\n", client->partial_len);
-  printf("[DEBUG - formatting]: client partial len: %zu\n", client->name_len);
 
   // Malloc buffer
   char *formatted_msg = (char *)malloc(string_len);
@@ -41,18 +39,8 @@ char *format_chat_message(const struct client_info *client){
   );
 
   // Set the end of the message
-  printf("[DEBUG - format_chat_message]: space allocated: %zu\n", string_len); 
-  printf("[DEBUG - format_chat_message]: chars written: %d\n", chars_written);
-  printf("[DEBUG - format_chat_message]: formatted message: %s\n", formatted_msg);
-  for(size_t i = 0; i < string_len; i++){
-    printf("%zu: %d -- %c\n", i, formatted_msg[i], formatted_msg[i]);
-  }
   formatted_msg[string_len - 2] = '\n';
   formatted_msg[string_len - 1] = '\0'; 
-  printf("[DEBUG - format_chat_message]: altered message: %s\n", formatted_msg);
-  for(size_t i = 0; i < string_len; i++){
-    printf("%zu: %d -- %c\n", i, formatted_msg[i], formatted_msg[i]);
-  }
 
 
   // Error check for snprintf

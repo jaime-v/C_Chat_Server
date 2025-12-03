@@ -23,7 +23,7 @@ enum CMD_RES server_handle_command(
     case CMD_WHISPER:
       return handle_whisper(state, user, saveptr);
     case CMD_SHUTDOWN:
-      if(handle_shutdown(state) == CMD_WARNING){
+      if(handle_shutdown() == CMD_WARNING){
         printf("Had a warning in shutdown\n");
       }
       return CMD_DISCONNECT;
@@ -128,16 +128,9 @@ enum CMD_RES handle_whisper(
   return CMD_OK;
 }
 
-enum CMD_RES handle_shutdown(struct server_state *state){
+enum CMD_RES handle_shutdown(){
   printf("Shutting down\n");
   server_shutdown = 1;
-  shutdown(state->server_fd, SHUT_RDWR);
-  if(close(state->server_fd) == -1) {
-    printf("[handle_client]: closing error\n");
-    return CMD_WARNING;
-  } else {
-    printf("[handle_client]: close success\n");
-  }
   return CMD_DISCONNECT;
 }
 

@@ -20,9 +20,7 @@ enum CMD_RES handle_whisper(
     struct client_info *user, 
     char *saveptr
 );
-enum CMD_RES handle_shutdown(
-    struct server_state *state
-);
+enum CMD_RES handle_shutdown();
 enum CMD_RES server_handle_unknown();
 
 #endif

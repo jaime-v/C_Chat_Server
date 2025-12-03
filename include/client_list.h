@@ -42,9 +42,10 @@ int cleanup_client(struct client_info *client);
 /**
  * Removes all clients from the server state. Should be used when shutting down.
  *
- * @param state   Pointer to server state struct that is shutting down.
+ * @param state       Pointer to server state struct that is shutting down.
+ * @param epoll_fd    Epoll file descriptor, we will be removing all clients from this
  *
  * @return        0 on success, -1 on failure.
  */
-int remove_all_clients(struct server_state *state);
+int remove_all_clients(struct server_state *state, int epoll_fd);
 #endif

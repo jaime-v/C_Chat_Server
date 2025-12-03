@@ -19,7 +19,7 @@ int accept_new_clients(struct server_state *state, int epoll_fd){
   for(;;){
     // Accept new client
     int client_fd = accept(state->server_fd, NULL, NULL);
-    printf("[accept_new_clients]: Accepted client_fd: %d\n", client_fd);
+    printf("[DEBUG - accept_new_clients]: Accepted: %d\n", client_fd);
 
     // Check client errors
     if(client_fd == -1){
