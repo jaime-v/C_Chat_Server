@@ -18,8 +18,8 @@ int handle_client_read(struct server_state *state, struct client_info *info){
         // Shouldn't be happening unless we get a shutdown
         // Assume client closed connection
         // Remove client
-        perror("Read 0 bytes from header, sending -2 to server_loop");
-        return -2;
+        perror("Read 0 bytes from header, sending -1 to server_loop");
+        return -1;
       }
 
 
@@ -29,7 +29,7 @@ int handle_client_read(struct server_state *state, struct client_info *info){
           perror("Got would block error, sending 0 to server_loop");
           return 0;
         } else {
-          perror("handle_client_read - read, sending -1 to server_loop");
+          perror("[DEBUG - handle_client_read]: actual read error, sending -1 to server_loop");
           return -1;
         }
       }
@@ -61,12 +61,13 @@ int handle_client_read(struct server_state *state, struct client_info *info){
           info->expected_payload_len, info->msg_type, info->msg_done);
       if(info->expected_payload_len > 16384){
         printf("[DEBUG - handle_client_read]: This is a big expected payload from %d\n", info->client_fd);
-        return -2;
+        return -1;
       }
 
       if(info->expected_payload_len > BUF_SIZE){
         // This shouldnt be possible
         perror("Expected payload is greater than buf size monka");
+        return -1;
       }
 
       // reset for payload

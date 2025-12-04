@@ -72,13 +72,13 @@ int main(void){
       // Check if msg is command
       if(buf[0] == '/'){
         // Create a copy and null terminate it -- malloc'd internally, need to free
-        char *buf_copy = (char *)malloc((size_t)bytes_read);
+        uint8_t *buf_copy = (uint8_t *)malloc((size_t)bytes_read);
         memcpy(buf_copy, buf, (size_t)bytes_read);
         buf_copy[bytes_read - 1] = '\0';
 
         // Tokenize the command
         char *saveptr;
-        char *cmd = strtok_r(buf_copy, " ", &saveptr);
+        char *cmd = strtok_r((char *)buf_copy, " ", &saveptr);
 
         // Make command lowercase
         size_t cmd_len = strlen(cmd);

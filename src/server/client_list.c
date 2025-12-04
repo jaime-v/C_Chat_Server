@@ -38,12 +38,8 @@ int cleanup_client(struct client_info *client){
   if (!client){
     return -1;
   }
-  if(client->closed == 1){
-    printf("[DEBUG - client_list]: client already closed, returning 0 to caller\n");
-    return 0;
-  }
-  client->closed = 1;
-  if (client->client_fd >= 0){
+  printf("[DEBUG - client_list]: closing client %d\n", client->client_fd);
+  if(client->client_fd >= 0){
     if(close(client->client_fd) == -1){
       return -1;
     }

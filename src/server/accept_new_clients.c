@@ -51,11 +51,11 @@ int accept_new_clients(struct server_state *state, int epoll_fd){
     struct epoll_event ev = {0};
     ev.events = EPOLLIN | EPOLLRDHUP;
     ev.data.ptr = info;
+    printf("[DEBUG accept_new_clients]: putting client %d into epoll\n", info->client_fd);
     if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1){
       perror("accept_new_clients - epoll_ctl");
       return -1;
     }
-
 
     // Add client to server state's global client list
     if(add_client_to_list(state, info) == -1){

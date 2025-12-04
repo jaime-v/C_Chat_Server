@@ -6,10 +6,11 @@
 #include <sys/types.h>
 #include <stdlib.h>
 
-char *format_chat_message(const struct client_info *client){
+uint8_t *format_chat_message(const struct client_info *client){
   // Create buffer for timestamp and get timestamp
   char timestamp[20];
   get_timestamp(timestamp, sizeof(timestamp));
+  size_t timestamp_len = strlen(timestamp);
 
   // String length is (assuming msg is stripped of \n):
   //     Length of timestamp
@@ -18,17 +19,30 @@ char *format_chat_message(const struct client_info *client){
   //     Colon + Space
   //     Length of msg ( -1 for null terminator)
   //     \n + \0
-  size_t string_len = strlen(timestamp) + 1 + client->name_len + 2 + client->partial_len + 2;
+  size_t string_len = timestamp_len + 1 + client->name_len + 2 + client->partial_len + 2;
 
   // Malloc buffer
-  char *formatted_msg = (char *)malloc(string_len);
+  uint8_t *formatted_msg = (uint8_t *)malloc(string_len);
   if(!formatted_msg){
     return NULL;
   }
 
+  // Manual formatting because we want to be able to handle binary data
+  size_t index = 0;
+  memcpy(formatted_msg + index, timestamp, timestamp_len);
+  index += timestamp_len;
+  formatted_msg[index++] = ' ';
+  memcpy(formatted_msg + index, client->name, client->name_len);
+  index += client->name_len;
+  formatted_msg[index++] = ':';
+  formatted_msg[index++] = ' ';
+  memcpy(formatted_msg + index, client->partial_msg, client->partial_len);
+  index += client->partial_len;
+
   // Format message into formatted_msg
+  /*
   int chars_written = snprintf(
-      formatted_msg, 
+      (char *)formatted_msg, 
       string_len,
       "%s %.*s: %.*s",
       timestamp,
@@ -37,14 +51,15 @@ char *format_chat_message(const struct client_info *client){
       (int)client->partial_len,
       client->partial_msg
   );
+  */
 
   // Set the end of the message
-  formatted_msg[string_len - 2] = '\n';
-  formatted_msg[string_len - 1] = '\0'; 
+  formatted_msg[index++] = '\n';
+  formatted_msg[index] = '\0'; 
 
 
   // Error check for snprintf
-  if(chars_written < 0 || chars_written >= (int)string_len){
+  if(index >= string_len){
     free(formatted_msg);
     return NULL;
   }
@@ -52,12 +67,13 @@ char *format_chat_message(const struct client_info *client){
   return formatted_msg;
 }
 
-char *format_whisper_message(const struct client_info *sender, const char *msg, size_t msg_len){
+uint8_t *format_whisper_message(const struct client_info *sender, const uint8_t *msg, size_t msg_len){
   // Create buffer for timestamp and get timestamp
   char timestamp[20];
   get_timestamp(timestamp, sizeof(timestamp));
+  size_t timestamp_len = strlen(timestamp);
 
-  char *whisper_thing = "Whisper from: ";
+  char *whisper_thing = " [Whisper from: ";
   size_t whisper_thing_len = strlen(whisper_thing);
 
   // String length is (assuming msg is stripped of \n):
@@ -71,7 +87,7 @@ char *format_whisper_message(const struct client_info *sender, const char *msg, 
   //     Length of msg 
   //     \n + \0
   size_t string_len = ( 
-      strlen(timestamp) 
+      timestamp_len
       + 2 
       + whisper_thing_len 
       + sender->name_len 
@@ -79,14 +95,29 @@ char *format_whisper_message(const struct client_info *sender, const char *msg, 
       + msg_len 
       + 2);
 
-  char *formatted_msg = (char *)malloc(string_len);
+  uint8_t *formatted_msg = (uint8_t *)malloc(string_len);
   if(formatted_msg == NULL){
     return NULL;
   }
 
+  // Manual formatting because we want to be able to handle binary data
+  size_t index = 0;
+  memcpy(formatted_msg + index, timestamp, timestamp_len);
+  index += timestamp_len;
+  memcpy(formatted_msg + index, whisper_thing, whisper_thing_len);
+  index += whisper_thing_len;
+  memcpy(formatted_msg + index, sender->name, sender->name_len);
+  index += sender->name_len;
+  formatted_msg[index++] = ']';
+  formatted_msg[index++] = ':';
+  formatted_msg[index++] = ' ';
+  memcpy(formatted_msg + index, msg, msg_len);
+  index += msg_len;
+
   // Format message into formatted_msg
+  /*
   int chars_written = snprintf(
-      formatted_msg, 
+      (char *)formatted_msg, 
       string_len,
       "%s [Whisper from: %.*s]: %.*s",
       timestamp,
@@ -95,13 +126,17 @@ char *format_whisper_message(const struct client_info *sender, const char *msg, 
       (int)msg_len,
       msg
   );
+  */
 
-  formatted_msg[string_len - 2] = '\n';
-  formatted_msg[string_len - 1] = '\0';
+  // End of message
+  formatted_msg[index++] = '\n';
+  formatted_msg[index] = '\0';
+
+  printf("Formatted msg: %s\n", formatted_msg);
 
 
   // Error check for snprintf
-  if(chars_written < 0 || chars_written >= (int)string_len){
+  if(index >= string_len){
     free(formatted_msg);
     return NULL;
   }

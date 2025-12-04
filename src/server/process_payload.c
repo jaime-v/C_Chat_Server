@@ -28,6 +28,8 @@ int process_payload(struct server_state *state, struct client_info *info, uint8_
     }
     size_t cmd_len = strlen(cmd);
     make_lowercase(cmd, cmd_len);
+    printf("cmd: %s\n", cmd);
+    printf("rest: %s\n", rest_of_message);
 
     enum CMD_RES command_result = server_handle_command(state, info, cmd, saveptr);
     if(command_result == CMD_DISCONNECT || command_result == CMD_ERROR){
@@ -39,8 +41,8 @@ int process_payload(struct server_state *state, struct client_info *info, uint8_
     }
   } else {
     printf("BROADCAST DETECTED\n");
-    char *formatted_msg = format_chat_message(info);
-    size_t formatted_len = strlen(formatted_msg);
+    uint8_t *formatted_msg = format_chat_message(info);
+    size_t formatted_len = strlen((char *)formatted_msg);
     if(broadcast(state, info, formatted_msg, formatted_len) == -1){
       perror("[DEBUG - process_payload]:Broadcasting error");
     }

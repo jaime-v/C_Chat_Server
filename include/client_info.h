@@ -39,7 +39,7 @@ struct client_info {
   size_t payload_bytes_read;
 
   // Name and name_len for user
-  char name[NAME_MAX];
+  uint8_t name[NAME_MAX];
   size_t name_len;
   
   // Flag for having name

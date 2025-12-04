@@ -53,6 +53,7 @@ int server_loop(struct server_state *state){
   while(server_shutdown != 1){
     // EPOLL TIME
     // Wait for events on the epoll_fd
+    printf("\n\n\nWaiting -- currently have: %zu clients\n\n", state->client_count);
     nfds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
     if(nfds == -1){
       perror("epoll_wait");
@@ -71,16 +72,23 @@ int server_loop(struct server_state *state){
       } else {
         // Otherwise the event is a bitmask for something
         uint32_t new_event = events[i].events;
-        struct client_info *info = events[i].data.ptr;
+        struct client_info *info = (struct client_info *)events[i].data.ptr;
+        if(info == NULL){
+          printf("Somehow the info is null\n");
+        }
         if(info->closed == 1){
+          printf("[DEBUG - server_loop]: client is closing\n");
+          if(epoll_ctl(epoll_fd, EPOLL_CTL_DEL, info->client_fd, NULL) < 0){
+            printf("Epoll error?\n");
+          }
+          remove_client_from_list(state, info);
           continue;
         }
 
         // If we have EPOLL Error or EPOLL Hangup, disconnect the client
         if(new_event & (EPOLLHUP | EPOLLRDHUP | EPOLLERR)){
           perror("[DEBUG - server_loop]: WE HAVE A DISCONNECT");
-          epoll_ctl(epoll_fd, EPOLL_CTL_DEL, info->client_fd, NULL);
-          remove_client_from_list(state, info);
+          info->closed = 1;
           continue;
           // disconnect_client(epoll_fd, fd, state);
           // Remove client from epoll
@@ -98,12 +106,7 @@ int server_loop(struct server_state *state){
           if((read_status = handle_client_read(state, info)) < 0){
             if(read_status == -1){
               printf("[DEBUG - server_loop]: handle_client_read returned -1\n");
-              continue;
-            }
-            if(read_status == -2){
-              printf("[DEBUG - server_loop]: Client is sending too large of a buffer\n");
-              epoll_ctl(epoll_fd, EPOLL_CTL_DEL, info->client_fd, NULL);
-              remove_client_from_list(state, info);
+              info->closed = 1;
               continue;
             }
           }
@@ -122,10 +125,12 @@ int server_loop(struct server_state *state){
 
   char *shutdown_message = "SERVER SHUTDOWN";
   size_t shutdown_len = strlen(shutdown_message);
-  broadcast(state, NULL, shutdown_message, shutdown_len);
+  broadcast(state, NULL, (uint8_t *)shutdown_message, shutdown_len);
 
   // Shutdown for server
-  epoll_ctl(epoll_fd, EPOLL_CTL_DEL, state->server_fd, NULL);
+  if(epoll_ctl(epoll_fd, EPOLL_CTL_DEL, state->server_fd, NULL) < 0){
+    printf("Epoll error?\n");
+  }
   shutdown(state->server_fd, SHUT_RDWR);
   if(close(state->server_fd) == -1){
     perror("close error on server_fd");
