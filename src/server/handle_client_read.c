@@ -18,8 +18,8 @@ int handle_client_read(struct server_state *state, struct client_info *info){
         // Shouldn't be happening unless we get a shutdown
         // Assume client closed connection
         // Remove client
-        perror("Read 0 bytes from header, sending -1 to server_loop");
-        return -1;
+        perror("Read 0 bytes from header, sending -2 to server_loop");
+        return -2;
       }
 
 
@@ -48,14 +48,16 @@ int handle_client_read(struct server_state *state, struct client_info *info){
         return -1;
       }
 
+      printf("[DEBUG - handle_client_read]: We got a valid header i think\n");
+
       // If we reach this point, we can parse the header because we have received all the bytes
       struct msg_header *header = (struct msg_header *)info->header_buffer;
 
-      info->expected_payload_len = (size_t)ntohl((uint32_t)header->msg_len);
+      info->expected_payload_len = ntohl(header->msg_len);
       info->msg_type = header->msg_type;
       info->msg_done = header->msg_done;
 
-      printf("[DEBUG - handle_client_read]: Read in header with: len=%zu and type=%u and done=%d\n", 
+      printf("[DEBUG - handle_client_read]: Read in header with: len=%u and type=%u and done=%d\n", 
           info->expected_payload_len, info->msg_type, info->msg_done);
       if(info->expected_payload_len > 16384){
         printf("[DEBUG - handle_client_read]: This is a big expected payload from %d\n", info->client_fd);
@@ -70,6 +72,8 @@ int handle_client_read(struct server_state *state, struct client_info *info){
       // reset for payload
       info->state = READ_PAYLOAD; 
       info->payload_bytes_read = 0;
+
+      printf("[DEBUG - handle_client_read]: Switching to reading payload\n");
 
     } else if (info->state == READ_PAYLOAD){
       ssize_t bytes_read = read(info->client_fd,
@@ -105,15 +109,17 @@ int handle_client_read(struct server_state *state, struct client_info *info){
         perror("Too many payload bytes somehow, sending -1");
         return -1;
       }
+      printf("[DEBUG - handle_client_read]: We found a valid payload probably\n");
+
 
       // If we reach this point, then our payload should be complete
       // Put the stuff into the client's big buffer
       if(append_to_client_buffer(info) == -1){
         perror("append_to_client_buffer");
       }
-
       // Check if the msg is done
       if(info->msg_done){
+        printf("[DEBUG - handle_client_read]: msg is done\n");
         uint8_t *payload_copy = copy_buffer(info->partial_msg, info->partial_len + 1);
         // Process message
         int payload_result = process_payload(state, info, payload_copy);
@@ -130,6 +136,7 @@ int handle_client_read(struct server_state *state, struct client_info *info){
       // Reset header reading
       info->state = READ_HEADER;
       info->header_bytes_read = 0;
+      printf("[DEBUG - handle_client_read]: Switching to reading header\n");
     } else{
       perror("This should not be possible");
       return -1;

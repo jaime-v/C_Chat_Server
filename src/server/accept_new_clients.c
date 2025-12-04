@@ -29,6 +29,7 @@ int accept_new_clients(struct server_state *state, int epoll_fd){
         return 0;
       } else {
         // We have an actual error
+        perror("We have an actual accept error");
         return -1;
       }
     }
@@ -61,6 +62,7 @@ int accept_new_clients(struct server_state *state, int epoll_fd){
       perror("accept_new_clients - add_client_to_list");
       return -1;
     }
+    printf("[DEBUG - accept_new_clients]: client_count: %zu\n", state->client_count);
   }
   perror("We should not be able to hit this");
   return -1;

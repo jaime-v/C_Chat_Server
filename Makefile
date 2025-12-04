@@ -1,6 +1,6 @@
 # Set CC and CFLAGS Variables
 CC = gcc-14
-CFLAGS = -Wall -Wextra -Werror -Wpedantic -Wconversion -Wsign-conversion -Wshadow -std=c2x -pthread -fsanitize=address -g
+CFLAGS = -Wall -Wextra -Werror -Wpedantic -Wconversion -Wsign-conversion -Wshadow -std=c2x -pthread -fsanitize=address,undefined -g
 INCLUDES = -Iinclude
 
 # Directories

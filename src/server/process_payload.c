@@ -38,6 +38,7 @@ int process_payload(struct server_state *state, struct client_info *info, uint8_
       perror("[DEBUG - process_payload]:Something went wrong MONKA");
     }
   } else {
+    printf("BROADCAST DETECTED\n");
     char *formatted_msg = format_chat_message(info);
     size_t formatted_len = strlen(formatted_msg);
     if(broadcast(state, info, formatted_msg, formatted_len) == -1){
@@ -45,6 +46,7 @@ int process_payload(struct server_state *state, struct client_info *info, uint8_
     }
     free(formatted_msg);
   }
+  printf("We have a valid payload processed\n");
 
 
   return 0;

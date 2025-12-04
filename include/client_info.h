@@ -28,7 +28,7 @@ struct client_info {
   size_t header_bytes_read;
 
   // Extracted details from header
-  size_t expected_payload_len;
+  uint32_t expected_payload_len;
   uint8_t msg_type;
   uint8_t msg_done;
   // After reading the header fully, we parse the header into the client_info fields
@@ -51,6 +51,8 @@ struct client_info {
   size_t partial_len;
   // Cap of dynamic array
   size_t partial_cap;
+
+  uint8_t closed;
 
   /*
   pthread_t thread;

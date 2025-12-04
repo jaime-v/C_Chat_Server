@@ -72,7 +72,24 @@ int server_loop(struct server_state *state){
         // Otherwise the event is a bitmask for something
         uint32_t new_event = events[i].events;
         struct client_info *info = events[i].data.ptr;
+        if(info->closed == 1){
+          continue;
+        }
 
+        // If we have EPOLL Error or EPOLL Hangup, disconnect the client
+        if(new_event & (EPOLLHUP | EPOLLRDHUP | EPOLLERR)){
+          perror("[DEBUG - server_loop]: WE HAVE A DISCONNECT");
+          epoll_ctl(epoll_fd, EPOLL_CTL_DEL, info->client_fd, NULL);
+          remove_client_from_list(state, info);
+          continue;
+          // disconnect_client(epoll_fd, fd, state);
+          // Remove client from epoll
+          // close the client file descriptor
+          // Remove client from client list
+          // Free client info
+          // Which is basically our disconnect protocol already
+        }
+       
         // If we have EPOLLIN event, the socket has data for reading
         if(new_event & EPOLLIN){
           // Probably make this into a function, then if we get a bad return or disconect, we
@@ -81,28 +98,17 @@ int server_loop(struct server_state *state){
           if((read_status = handle_client_read(state, info)) < 0){
             if(read_status == -1){
               printf("[DEBUG - server_loop]: handle_client_read returned -1\n");
+              continue;
             }
             if(read_status == -2){
               printf("[DEBUG - server_loop]: Client is sending too large of a buffer\n");
               epoll_ctl(epoll_fd, EPOLL_CTL_DEL, info->client_fd, NULL);
               remove_client_from_list(state, info);
+              continue;
             }
           }
         }
-
-        // If we have EPOLL Error or EPOLL Hangup, disconnect the client
-        if(new_event & (EPOLLHUP | EPOLLRDHUP | EPOLLERR)){
-          perror("WE HAVE A DISCONNECT");
-          epoll_ctl(epoll_fd, EPOLL_CTL_DEL, info->client_fd, NULL);
-          remove_client_from_list(state, info);
-          // disconnect_client(epoll_fd, fd, state);
-          // Remove client from epoll
-          // close the client file descriptor
-          // Remove client from client list
-          // Free client info
-          // Which is basically our disconnect protocol already
-        }
-        
+ 
         /*
         // If we have EPOLLOUT event, we can write to the socket
         // Although, EPOLLOUT triggers every loop since most sockets are writable

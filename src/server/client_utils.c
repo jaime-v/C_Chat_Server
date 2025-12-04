@@ -3,14 +3,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+// DEBUG
+#include <stdio.h>
+
 int append_to_client_buffer(struct client_info *client){
   // If message len + bytes read from payload > message cap, expand message cap
   if(client->partial_len + client->payload_bytes_read > client->partial_cap){
+    printf("We are here\n");
     while(client->partial_cap < client->partial_len + client->payload_bytes_read) { 
+      printf("We are doubling\n");
       client->partial_cap *= 2; 
     }
+    printf("We are calling realloc\n");
     client->partial_msg = realloc(client->partial_msg, client->partial_cap);
     if(client->partial_msg == NULL){
+      printf("We have a realloc error\n");
       return -1;
     }
   }

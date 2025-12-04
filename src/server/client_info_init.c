@@ -22,6 +22,8 @@ int client_info_init(struct client_info *client_out, int client_fd){
   client_out->name_len = 0;
   client_out->has_name = 0;
 
+  client_out->closed = 0;
+
   return 0;
 }
 
