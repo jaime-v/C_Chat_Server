@@ -10,18 +10,20 @@ int broadcast(struct server_state *state, struct client_info *sender, uint8_t *m
   for(size_t i = 0; i < state->client_count; ++i){
     if(state->client_list[i] != sender){
       if(state->client_list[i]->closed == 1){
+        perror("[DEBUG - broadcast]: client already marked for closed, won't broadcast");
         continue;
       }
       struct msg_header out_header;
       if(create_header(&out_header, len, MSG_TYPE_NORMAL, true) == -1){
-        printf("[DEBUG - broadcast]: Couldnt create header\n");
-        return -1;
+        perror("[DEBUG - broadcast]: Couldnt create header");
+        state->client_list[i]->closed = 1;
+        continue;
       }
 
       if(write_header(
           state->client_list[i]->client_fd, 
           (const struct msg_header *)&out_header) == -1){
-        printf("[DEBUG - broadcast]: Couldnt write header\n");
+        perror("[DEBUG - broadcast]: Couldnt write header");
         state->client_list[i]->closed = 1;
         continue;
       }
@@ -30,7 +32,7 @@ int broadcast(struct server_state *state, struct client_info *sender, uint8_t *m
           state->client_list[i]->client_fd,
           (const char *)msg,
           len) == -1){
-        printf("[DEBUG - broadcast]: Couldnt write payload\n");
+        perror("[DEBUG - broadcast]: Couldnt write payload");
         state->client_list[i]->closed = 1;
         continue;
       }

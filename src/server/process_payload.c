@@ -11,9 +11,7 @@
 int process_payload(struct server_state *state, struct client_info *info, uint8_t *payload_copy){
   if(info->has_name == 0){
     printf("STORING NAME\n");
-    if(store_client_name(info) == -1){
-      perror("[DEBUG - process_payload]:store_client_name");
-    }
+    store_client_name(info);
     info->has_name = 1;
   } else if (payload_copy[0] == '/'){
     printf("COMMAND DETECTED\n");
@@ -37,15 +35,13 @@ int process_payload(struct server_state *state, struct client_info *info, uint8_
       return -1;
     }
     if(command_result == CMD_WARNING){
-      perror("[DEBUG - process_payload]:Something went wrong MONKA");
+      perror("[DEBUG - process_payload]: Something went wrong MONKA");
     }
   } else {
     printf("BROADCAST DETECTED\n");
     uint8_t *formatted_msg = format_chat_message(info);
     size_t formatted_len = strlen((char *)formatted_msg);
-    if(broadcast(state, info, formatted_msg, formatted_len) == -1){
-      perror("[DEBUG - process_payload]:Broadcasting error");
-    }
+    broadcast(state, info, formatted_msg, formatted_len);
     free(formatted_msg);
   }
   printf("We have a valid payload processed\n");

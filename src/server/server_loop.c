@@ -51,12 +51,22 @@ int server_loop(struct server_state *state){
 
 
   while(server_shutdown != 1){
+    for(size_t i = 0; i < state->client_count; ++i){
+      if(state->client_list[i]->closed == 1){
+        printf("[DEBUG - server_loop]: client is closing\n");
+        if(epoll_ctl(epoll_fd, EPOLL_CTL_DEL, state->client_list[i]->client_fd, NULL) < 0){
+          printf("Epoll error?\n");
+        }
+        remove_client_from_list(state, state->client_list[i]);
+      }
+    }
+
     // EPOLL TIME
     // Wait for events on the epoll_fd
     printf("\n\n\nWaiting -- currently have: %zu clients\n\n", state->client_count);
     nfds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
     if(nfds == -1){
-      perror("epoll_wait");
+      perror("\n\n\n\n\nepoll_wait\n\n\n\n\n");
       return -1;
     }
 
@@ -123,6 +133,7 @@ int server_loop(struct server_state *state){
     }
   }
 
+  perror("We are shutting down for some reason");
   char *shutdown_message = "SERVER SHUTDOWN";
   size_t shutdown_len = strlen(shutdown_message);
   broadcast(state, NULL, (uint8_t *)shutdown_message, shutdown_len);

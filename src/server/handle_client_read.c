@@ -26,7 +26,7 @@ int handle_client_read(struct server_state *state, struct client_info *info){
       if(bytes_read < 0){
         if(errno == EAGAIN || errno == EWOULDBLOCK){
           // No more data to read
-          perror("Got would block error, sending 0 to server_loop");
+          perror("[DEBUG - handle_client_read]: Got would block error, sending 0 to server_loop");
           return 0;
         } else {
           perror("[DEBUG - handle_client_read]: actual read error, sending -1 to server_loop");

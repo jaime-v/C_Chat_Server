@@ -23,9 +23,10 @@ int main(void){
 
   // Server loop logic
   if(server_loop(&state) == -1){
-    perror("SERVER EXITED WITH ERROR");
+    perror("\n\n\n\n\n\nSERVER EXITED WITH ERROR\n\n\n\n\n\n\n");
   }
 
+  perror("\n\n\n\n\n\nCLEANING UP SERVER STATE\n\n\n\n\n\n\n\n");
   // Clean up server state
   if(server_state_destroy(&state) == -1){
     handle_error("server_state_destroy");
