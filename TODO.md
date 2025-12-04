@@ -1,5 +1,11 @@
 As of Dec 2 2025:
 
+Ima be so real, i never use this.
+but we need to work on partial writes i think.
+just like how we adjusted the partial reads, we need to do the same for writes.
+that might be why our fuzzers are failing sometimes. if we have a partial write it cant
+read the header or the payload. and everyone instantly fails and gets marked.
+
 * Plan to do:
     * Create an actually good Github repo for this project
     * Make better error logs and handling (warning, info, error and continue, error and fail, etc.)
