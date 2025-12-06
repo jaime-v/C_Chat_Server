@@ -9,6 +9,8 @@ enum CMD_RES client_handle_command(int sfd, char *cmd){
   switch(command){
     case CMD_QUIT:
       return handle_quit(sfd);
+    case CMD_SHUTDOWN:
+      return CMD_DISCONNECT;
     case CMD_UNKNOWN:
     default:
       return client_handle_unknown();

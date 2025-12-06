@@ -50,10 +50,10 @@ int cleanup_client(struct client_info *client){
   return 0;
 }
 
-int remove_all_clients(struct server_state *state, int epoll_fd){
+int remove_all_clients(struct server_state *state){
   pthread_mutex_lock(&state->client_mutex);
   for(int i = (int)state->client_count - 1; i >= 0; --i){
-    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, state->client_list[i]->client_fd, NULL);
+    epoll_ctl(state->epoll_fd, EPOLL_CTL_DEL, state->client_list[i]->client_fd, NULL);
     if(cleanup_client(state->client_list[i]) == -1){
       return -1;
     }

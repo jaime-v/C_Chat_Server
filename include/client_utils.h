@@ -32,4 +32,16 @@ int clear_client_buffer(struct client_info *client);
  */
 int store_client_name(struct client_info *client);
 
+/**
+ *  Enqueue a msg_packet struct into the client's msg_queue.
+ *
+ *
+ *  @param client   Pointer to client's info struct.
+ *
+ *  @return         0 on success, -1 on failure
+ */
+int client_enqueue_msg_packet(struct client_info *client, 
+                              struct msg_packet *packet, 
+                              size_t msg_size_limit);
+
 #endif

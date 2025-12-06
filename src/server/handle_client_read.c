@@ -13,7 +13,7 @@ int handle_client_read(struct server_state *state, struct client_info *info){
       ssize_t bytes_read = read(info->client_fd,
                                 info->header_buffer + info->header_bytes_read,
                                 sizeof(struct msg_header) - info->header_bytes_read);
-      printf("SIZEOF msg header: %zu\n", sizeof(struct msg_header));
+      printf("[DEBUG - handle_client_read]: Reading from client %d\n", info->client_fd);
       if(bytes_read == 0){
         // Shouldn't be happening unless we get a shutdown
         // Assume client closed connection

@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include "common_header.h"
 #include "protocol.h"
+#include "msg_queue.h"
 
 #define NAME_MAX 64
 
@@ -37,6 +38,15 @@ struct client_info {
   uint8_t payload_buffer[BUF_SIZE];
   // How many bytes we've accumulated into payload_buffer
   size_t payload_bytes_read;
+
+  // For writing stuff
+  uint8_t *write_buffer;
+  size_t write_len;
+  size_t write_offset;
+
+  // Message queue for writing and epollout event
+  struct msg_queue msg_queue;
+  uint8_t epollout_enabled;
 
   // Name and name_len for user
   uint8_t name[NAME_MAX];

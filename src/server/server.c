@@ -5,9 +5,10 @@
 
 #include <stdio.h>
 #include <netinet/in.h>
+#include <signal.h>
 
 int main(void){
-  // int sfd;
+  signal(SIGPIPE, SIG_IGN);
   struct sockaddr_in addr;
   struct server_state state;
 

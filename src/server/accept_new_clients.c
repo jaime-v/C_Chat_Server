@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int accept_new_clients(struct server_state *state, int epoll_fd){
+int accept_new_clients(struct server_state *state){
   // Apparently we should for loop this? but not sure why
   // Supposedly we can have multiple clients wanting to connect but wouldnt that just cause
   // multiple events?
@@ -41,7 +41,7 @@ int accept_new_clients(struct server_state *state, int epoll_fd){
     }
 
     // Create client_info struct
-    struct client_info *info = (struct client_info *)malloc(sizeof(*info));
+    struct client_info *info = (struct client_info *)malloc(sizeof(struct client_info));
     if(client_info_init(info, client_fd) == -1){
       perror("accept_new_clients - client_info_init");
       return -1;
@@ -52,7 +52,7 @@ int accept_new_clients(struct server_state *state, int epoll_fd){
     ev.events = EPOLLIN | EPOLLRDHUP;
     ev.data.ptr = info;
     printf("[DEBUG accept_new_clients]: putting client %d into epoll\n", info->client_fd);
-    if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1){
+    if(epoll_ctl(state->epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1){
       perror("accept_new_clients - epoll_ctl");
       return -1;
     }

@@ -15,13 +15,18 @@ int client_info_init(struct client_info *client_out, int client_fd){
   client_out->client_fd = client_fd;
   client_out->state = READ_HEADER;
 
+  // I am realizing now that i probably don't need to zero out all of these
+  // but maybe ill just keep it cuz why not
   client_out->header_bytes_read = 0;
   client_out->payload_bytes_read = 0;
   client_out->expected_payload_len = 0;
 
+  client_out->write_len = 0;
+  client_out->write_offset = 0;
+
   client_out->name_len = 0;
   client_out->has_name = 0;
-
+  client_out->epollout_enabled = 0;
   client_out->closed = 0;
 
   return 0;

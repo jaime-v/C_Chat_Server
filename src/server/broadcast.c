@@ -1,40 +1,52 @@
 #include "broadcast.h"
 #include "protocol.h"
+#include "msg_packet.h"
+#include "client_utils.h"
+#include "client_try_write.h"
+#include "epoll_mod.h"
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <arpa/inet.h>
 #include <sys/epoll.h>
 
 int broadcast(struct server_state *state, struct client_info *sender, uint8_t *msg, size_t len){
   pthread_mutex_lock(&state->client_mutex);
+  // Create message header
+  struct msg_header out_header;
+  if(create_header(&out_header, len, MSG_TYPE_NORMAL, true) == -1){
+    return -1;
+  }
   for(size_t i = 0; i < state->client_count; ++i){
-    if(state->client_list[i] != sender){
-      if(state->client_list[i]->closed == 1){
+    struct client_info *current_client = state->client_list[i];
+    if(current_client != sender){
+      if(current_client->closed == 1){
         perror("[DEBUG - broadcast]: client already marked for closed, won't broadcast");
         continue;
       }
-      struct msg_header out_header;
-      if(create_header(&out_header, len, MSG_TYPE_NORMAL, true) == -1){
-        perror("[DEBUG - broadcast]: Couldnt create header");
-        state->client_list[i]->closed = 1;
+
+      // Make message packet
+      struct msg_packet *packet = create_packet(&out_header, msg, len);
+      if(packet == NULL){
+        // Error making packet
         continue;
       }
 
-      if(write_header(
-          state->client_list[i]->client_fd, 
-          (const struct msg_header *)&out_header) == -1){
-        perror("[DEBUG - broadcast]: Couldnt write header");
-        state->client_list[i]->closed = 1;
-        continue;
+      // Enqueue the message packet to the client
+      if(client_enqueue_msg_packet(current_client, packet, MSG_SIZE_LIMIT) == -1){
+        free(packet->packet_data);
+        free(packet);
       }
 
-      if(write_payload(
-          state->client_list[i]->client_fd,
-          (const char *)msg,
-          len) == -1){
-        perror("[DEBUG - broadcast]: Couldnt write payload");
-        state->client_list[i]->closed = 1;
-        continue;
+      if(current_client->epollout_enabled == 0 && current_client->msg_queue.head == packet){
+        printf("[DEBUG - broadcast]: Client %d does not have epoll enabled and its head is the current packet\n", current_client->client_fd);
+        if(client_try_write(state->epoll_fd, current_client) == -1){
+          current_client->closed = 1;
+        }
+      }
+
+      if(current_client->msg_queue.head != NULL){
+        enable_epollout_for_client(state->epoll_fd, current_client);
       }
     }
   }

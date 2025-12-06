@@ -19,6 +19,7 @@ int main(void){
   ssize_t bytes_read;
   char buf[BUF_SIZE];
   bool last_chunk_filled = false;
+  int disconnecting = 0;
 
   // Init client socket
   if(init_client(&sfd, &addr) == -1){
@@ -89,8 +90,7 @@ int main(void){
         free(buf_copy);
         if(command_result == CMD_ERROR || command_result == CMD_DISCONNECT){
           printf("Disconnect or error\n");
-          free(info);
-          break;
+          disconnecting = 1;
         }
       }
 
@@ -134,6 +134,11 @@ int main(void){
       // e.g. Hello\0 - bytes_read = 5, just for Hello
       if(write_payload(sfd, (const char *)buf, (size_t)bytes_read) == -1){
         handle_error("write - payload");
+      }
+
+      if(disconnecting == 1){
+        free(info);
+        break;
       }
     }
   }

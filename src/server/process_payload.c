@@ -41,7 +41,9 @@ int process_payload(struct server_state *state, struct client_info *info, uint8_
     printf("BROADCAST DETECTED\n");
     uint8_t *formatted_msg = format_chat_message(info);
     size_t formatted_len = strlen((char *)formatted_msg);
-    broadcast(state, info, formatted_msg, formatted_len);
+    if(broadcast(state, info, formatted_msg, formatted_len) == -1){
+      printf("[DEBUG - process_payload]: Broadcast failed\n");
+    }
     free(formatted_msg);
   }
   printf("We have a valid payload processed\n");

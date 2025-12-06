@@ -3,6 +3,7 @@
 #include "client_thread_args.h"
 #include "client_info_init.h"
 #include "client_list.h"
+#include "client_try_write.h"
 #include "server_control.h"
 #include "broadcast.h"
 #include "process_payload.h"
@@ -28,13 +29,6 @@
 int server_loop(struct server_state *state){
   int nfds;
 
-  // EPOLL
-  int epoll_fd = epoll_create1(0);
-  if(epoll_fd == -1){
-    perror("epoll_create1");
-    return -1;
-  }
-
   struct epoll_event ev = {0};
   struct epoll_event events[MAX_EVENTS];
   ev.events = EPOLLIN;
@@ -44,7 +38,7 @@ int server_loop(struct server_state *state){
   // EPOLLERR and EPOLLHUP is always a part of our events list
   ev.data.fd = state->server_fd;
 
-  if(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, state->server_fd, &ev) == -1){
+  if(epoll_ctl(state->epoll_fd, EPOLL_CTL_ADD, state->server_fd, &ev) == -1){
     perror("epoll_ctl");
     return -1;
   }
@@ -52,11 +46,18 @@ int server_loop(struct server_state *state){
 
   while(server_shutdown != 1){
     for(size_t i = 0; i < state->client_count; ++i){
-      if(state->client_list[i]->closed == 1){
+      struct client_info *current_client = state->client_list[i];
+      if(current_client->closed == 1){
         printf("[DEBUG - server_loop]: client is closing\n");
-        if(epoll_ctl(epoll_fd, EPOLL_CTL_DEL, state->client_list[i]->client_fd, NULL) < 0){
+        if(epoll_ctl(state->epoll_fd, EPOLL_CTL_DEL, current_client->client_fd, NULL) < 0){
           printf("Epoll error?\n");
-        }
+        } 
+        while(current_client->msg_queue.head != NULL){
+          struct msg_packet *next = current_client->msg_queue.head->next;
+          free(current_client->msg_queue.head->packet_data);
+          free(current_client->msg_queue.head);
+          current_client->msg_queue.head = next;
+        } 
         remove_client_from_list(state, state->client_list[i]);
       }
     }
@@ -64,7 +65,7 @@ int server_loop(struct server_state *state){
     // EPOLL TIME
     // Wait for events on the epoll_fd
     printf("\n\n\nWaiting -- currently have: %zu clients\n\n", state->client_count);
-    nfds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+    nfds = epoll_wait(state->epoll_fd, events, MAX_EVENTS, -1);
     if(nfds == -1){
       perror("\n\n\n\n\nepoll_wait\n\n\n\n\n");
       return -1;
@@ -75,7 +76,7 @@ int server_loop(struct server_state *state){
       // If the event came from our listening socket, we have a client to accept
       int fd = events[i].data.fd;
       if(fd == state->server_fd){
-        if(accept_new_clients(state, epoll_fd) == -1){
+        if(accept_new_clients(state) == -1){
           perror("server_loop - accept_new_clients");
           continue;
         }
@@ -87,48 +88,33 @@ int server_loop(struct server_state *state){
           printf("Somehow the info is null\n");
         }
         if(info->closed == 1){
-          printf("[DEBUG - server_loop]: client is closing\n");
-          if(epoll_ctl(epoll_fd, EPOLL_CTL_DEL, info->client_fd, NULL) < 0){
-            printf("Epoll error?\n");
-          }
-          remove_client_from_list(state, info);
           continue;
         }
 
         // If we have EPOLL Error or EPOLL Hangup, disconnect the client
         if(new_event & (EPOLLHUP | EPOLLRDHUP | EPOLLERR)){
-          perror("[DEBUG - server_loop]: WE HAVE A DISCONNECT");
+          printf("[DEBUG - server_loop]: Disconnect event - marking client %d for closed\n", info->client_fd);
           info->closed = 1;
           continue;
-          // disconnect_client(epoll_fd, fd, state);
-          // Remove client from epoll
-          // close the client file descriptor
-          // Remove client from client list
-          // Free client info
-          // Which is basically our disconnect protocol already
         }
        
         // If we have EPOLLIN event, the socket has data for reading
         if(new_event & EPOLLIN){
-          // Probably make this into a function, then if we get a bad return or disconect, we
-          // shutdown -- if we get good return, we can move on
-          int read_status = 0;
-          if((read_status = handle_client_read(state, info)) < 0){
-            if(read_status == -1){
-              printf("[DEBUG - server_loop]: handle_client_read returned -1\n");
-              info->closed = 1;
-              continue;
-            }
+          if(handle_client_read(state, info) < 0){
+            printf("[DEBUG - server_loop]: handle_client_read returned -1, changing client %d to close\n", info->client_fd);
+            info->closed = 1;
+            continue;
           }
         }
  
-        /*
         // If we have EPOLLOUT event, we can write to the socket
-        // Although, EPOLLOUT triggers every loop since most sockets are writable
         if(new_event & EPOLLOUT){
-          handle_client_write(epoll_fd, fd, state);
+          printf("[DEBUG - server_loop] Detected EPOLLOUT, trying to write\n");
+          if(client_try_write(state->epoll_fd, info) == -1){
+            info->closed = 1;
+            continue;
+          }
         }
-        */
       }
     }
   }
@@ -139,15 +125,24 @@ int server_loop(struct server_state *state){
   broadcast(state, NULL, (uint8_t *)shutdown_message, shutdown_len);
 
   // Shutdown for server
-  if(epoll_ctl(epoll_fd, EPOLL_CTL_DEL, state->server_fd, NULL) < 0){
+  if(epoll_ctl(state->epoll_fd, EPOLL_CTL_DEL, state->server_fd, NULL) < 0){
     printf("Epoll error?\n");
   }
   shutdown(state->server_fd, SHUT_RDWR);
   if(close(state->server_fd) == -1){
     perror("close error on server_fd");
   }
-
-  if(remove_all_clients(state, epoll_fd) == -1){
+ 
+  for(size_t i = 0; i < state->client_count; ++i){
+    struct client_info *current_client = state->client_list[i];
+    while(current_client->msg_queue.head != NULL){
+      struct msg_packet *next = current_client->msg_queue.head->next;
+      free(current_client->msg_queue.head->packet_data);
+      free(current_client->msg_queue.head);
+      current_client->msg_queue.head = next;
+    }
+  }
+  if(remove_all_clients(state) == -1){
     // Which we might not want? we want to retry this
     // return -1;
     perror("remove_all_clients");

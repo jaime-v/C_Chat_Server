@@ -56,3 +56,35 @@ int store_client_name(struct client_info *client){
   return 0;
 }
 
+
+int client_enqueue_msg_packet(struct client_info *client, 
+                              struct msg_packet *packet, 
+                              size_t msg_size_limit){
+  if(packet == NULL){
+    return -1;
+  }
+
+  if(client->msg_queue.queued_bytes + packet->len > msg_size_limit){
+    // Can't queue up more messages
+    return -1;
+  }
+
+  if(client->msg_queue.tail != NULL){
+    // If queue is nonempty, make the current tail element point to the packet.
+    // Then make the packet the new tail element.
+    client->msg_queue.tail->next = packet;
+    client->msg_queue.tail = packet;
+  } else {
+    // Otherwise, the queue is empty, so head and tail can point to the same packet.
+    client->msg_queue.head = packet;
+    client->msg_queue.tail = packet;
+  }
+
+  // Increase the size of the msg_queue and number of queued messages
+  client->msg_queue.queued_bytes += packet->len;
+  client->msg_queue.queued_count++;
+
+  printf("[DEBUG - client_utils]: enqueue packet to client: %d\n", client->client_fd);
+  return 0;
+
+}

@@ -3,6 +3,6 @@
 
 #include "server_state.h"
 
-int accept_new_clients(struct server_state *state, int epoll_fd);
+int accept_new_clients(struct server_state *state);
 
 #endif

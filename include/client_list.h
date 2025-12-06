@@ -47,5 +47,5 @@ int cleanup_client(struct client_info *client);
  *
  * @return        0 on success, -1 on failure.
  */
-int remove_all_clients(struct server_state *state, int epoll_fd);
+int remove_all_clients(struct server_state *state);
 #endif
