@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/epoll.h>
 
 
 #include <stdio.h> // DEBUG
@@ -18,6 +19,10 @@ int server_state_init(struct server_state *state_out){
   }
   state_out->server_fd = -1;
   state_out->client_count = 0;
+  state_out->epoll_fd = epoll_create1(0);
+  if(state_out->epoll_fd == -1){
+    return -1;
+  }
   return 0;
 }
 

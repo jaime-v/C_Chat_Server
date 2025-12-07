@@ -13,8 +13,8 @@ int get_timestamp(char *timestamp_out, size_t size){
   return 0;
 }
 
-char *copy_buffer(char *buf_src, size_t size){
-  char *buf_copy_out = (char *)malloc(size);
+uint8_t *copy_buffer(uint8_t *buf_src, size_t size){
+  uint8_t *buf_copy_out = (uint8_t *)malloc(size);
   if(buf_copy_out == NULL){
     return NULL;
   }

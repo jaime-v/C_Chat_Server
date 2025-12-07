@@ -1,14 +1,17 @@
 #include "common_setup.h"
 #include "server_setup.h"
 
-// Debug
-#include <stdio.h>
+#include <fcntl.h>
 
 int init_server(int *sfd, struct sockaddr_in *addr){
   int status;
   
   status = create_inet_socket(sfd);
   if(status != 0) { return status; }
+
+  // EPOLL Stuff - set server file descriptor to non-blocking
+  status = fcntl(*sfd, F_SETFL, O_NONBLOCK);
+  if(status == -1){ return status; }
 
   status = setup_address(addr, LISTEN_ADDR);
   if(status != 0) { return status; }

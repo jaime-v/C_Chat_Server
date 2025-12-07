@@ -18,7 +18,7 @@
  *
  * @return        0 on success, -1 on failure
  */
-int broadcast(struct server_state *state, struct client_info *sender, char *msg, size_t len);
+int broadcast(struct server_state *state, struct client_info *sender, uint8_t *msg, size_t len);
 
 /**
  * Sends a message from server directly to a client's accepted file descriptor.
@@ -30,7 +30,7 @@ int broadcast(struct server_state *state, struct client_info *sender, char *msg,
  *
  * @return        0 on success, -1 on failure
  */
-int server_send_message(int cfd, char *msg, size_t msg_len);
+int server_send_message(int cfd, uint8_t *msg, size_t msg_len);
 
 /**
  * Sends a message from server directly to a client's accepted file descriptor.
@@ -42,7 +42,7 @@ int server_send_message(int cfd, char *msg, size_t msg_len);
  *
  * @return        0 on success, -1 on failure
  */
-int client_send_direct_message(int cfd, char *msg, size_t msg_len);
+int client_send_direct_message(int cfd, uint8_t *msg, size_t msg_len);
 
 
 

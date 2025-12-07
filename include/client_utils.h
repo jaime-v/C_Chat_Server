@@ -8,12 +8,10 @@
  *  Append payload to buffer stored in client_info struct pointed to by client.
  *
  *  @param client       Pointer to info of client.
- *  @param payload      Message that client has read in.
- *  @param bytes_read   Number of bytes that client has read in.
  *
  *  @return             0 on success, -1 on failure.
  */
-int append_to_client_buffer(struct client_info *client, char *payload, size_t bytes_read);
+int append_to_client_buffer(struct client_info *client);
 
 /**
  *  Clear buffer stored in client.
@@ -33,5 +31,17 @@ int clear_client_buffer(struct client_info *client);
  *  @return         0 on success -- might be void able
  */
 int store_client_name(struct client_info *client);
+
+/**
+ *  Enqueue a msg_packet struct into the client's msg_queue.
+ *
+ *
+ *  @param client   Pointer to client's info struct.
+ *
+ *  @return         0 on success, -1 on failure
+ */
+int client_enqueue_msg_packet(struct client_info *client, 
+                              struct msg_packet *packet, 
+                              size_t msg_size_limit);
 
 #endif

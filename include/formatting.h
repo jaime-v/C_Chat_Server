@@ -10,7 +10,7 @@
  *
  *  @return         Formatted message on success, NULL on failure.
  */
-char *format_chat_message(const struct client_info *client);
+uint8_t *format_chat_message(const struct client_info *client);
 
 /**
  *  Formats incoming message into a whisper message.
@@ -20,6 +20,6 @@ char *format_chat_message(const struct client_info *client);
  *
  *  @return         Formatted message on success, NULL on failure.
  */
-char *format_whisper_message(const struct client_info *sender, const char *msg, size_t msg_len);
+uint8_t *format_whisper_message(const struct client_info *sender, const uint8_t *msg, size_t msg_len);
 
 #endif

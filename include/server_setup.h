@@ -6,7 +6,7 @@
 #define ERR_BIND    -3
 #define ERR_LISTEN  -4
 
-#define LISTEN_BACKLOG 100
+#define LISTEN_BACKLOG 256
 #define LISTEN_ADDR "0.0.0.0"
 
 /**

@@ -4,12 +4,13 @@
 #include <stdio.h>
 #include <unistd.h>
 
-enum CMD_RES client_handle_command(int sfd /*, struct listen_info *info*/ , char *cmd){
+enum CMD_RES client_handle_command(int sfd, char *cmd){
   enum CMD command = find_command(cmd);
-  printf("[DEBUG - client_handle_command]: Command: %d\n", command);
   switch(command){
     case CMD_QUIT:
-      return handle_quit(sfd /*, info */);
+      return handle_quit(sfd);
+    case CMD_SHUTDOWN:
+      return CMD_DISCONNECT;
     case CMD_UNKNOWN:
     default:
       return client_handle_unknown();
@@ -18,11 +19,7 @@ enum CMD_RES client_handle_command(int sfd /*, struct listen_info *info*/ , char
 }
 
 enum CMD_RES handle_quit(int sfd /* , struct listen_info *info */){
-  printf("[DEBUG - client_handle_command]: client quitting\n");
   shutdown(sfd, SHUT_RDWR);
-  // We will free info in the client driver
-  // free(info);
-  // info = NULL;
   if(close(sfd) == -1){
     return CMD_WARNING;
   }

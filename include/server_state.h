@@ -4,10 +4,11 @@
 #include "client_info.h"
 #include <pthread.h>
 
-#define MAX_CLIENTS 10
+#define MAX_CLIENTS 1000
 
 struct server_state {
   int server_fd;
+  int epoll_fd;
   struct client_info *client_list[MAX_CLIENTS];
   size_t client_count;
   pthread_mutex_t client_mutex;

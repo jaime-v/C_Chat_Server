@@ -7,12 +7,15 @@
 #define MSG_TYPE_NORMAL 0x00
 #define MSG_TYPE_ADMIN  0x01
 #define MSG_TYPE_RANDOM 0x02
+#define MSG_SIZE_LIMIT 65536
 
+#pragma pack(push, 1)
 struct msg_header {
-  size_t msg_len;
+  uint32_t msg_len;
   uint8_t msg_type;
-  bool msg_done;
+  uint8_t msg_done;
 };
+#pragma pack(pop)
 
 /**
  * Reads a header from socket fd.
@@ -110,6 +113,8 @@ ssize_t write_packet(
  *  @param msg_len      Length of message.
  *  @param msg_type     Type of message.
  *  @param msg_done     Bool for if message continues.
+ *
+ *  @return             0 on success, -1 on failure
  */
 int create_header(
     struct msg_header *header_out,
@@ -117,5 +122,6 @@ int create_header(
     uint8_t msg_type,
     bool msg_done
 );
+
 
 #endif

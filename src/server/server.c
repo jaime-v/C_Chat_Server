@@ -5,9 +5,10 @@
 
 #include <stdio.h>
 #include <netinet/in.h>
+#include <signal.h>
 
 int main(void){
-  // int sfd;
+  signal(SIGPIPE, SIG_IGN);
   struct sockaddr_in addr;
   struct server_state state;
 
@@ -21,16 +22,9 @@ int main(void){
     handle_error("init_server");
   }
 
-  /*
-  // Server loop logic
-  if(server_loop(&state, sfd) == -1){
-    fprintf(stderr, "SERVER EXITED WITH ERROR\n");
-  }
-  */
-
   // Server loop logic
   if(server_loop(&state) == -1){
-    fprintf(stderr, "SERVER EXITED WITH ERROR\n");
+    perror("Server exited with error");
   }
 
   // Clean up server state

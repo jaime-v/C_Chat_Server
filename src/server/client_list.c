@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/epoll.h>
 
 int add_client_to_list(struct server_state *state, struct client_info *client){
   pthread_mutex_lock(&state->client_mutex);
@@ -10,7 +11,7 @@ int add_client_to_list(struct server_state *state, struct client_info *client){
   } else {
     printf("Max Clients Reached\n");
     pthread_mutex_unlock(&state->client_mutex);
-    close(client->cfd);
+    close(client->client_fd);
     free(client);
     return -1;
   }
@@ -37,12 +38,10 @@ int cleanup_client(struct client_info *client){
   if (!client){
     return -1;
   }
-
-  if (client->cfd >= 0){
-    if(close(client->cfd) == -1){
+  if(client->client_fd >= 0){
+    if(close(client->client_fd) == -1){
       return -1;
     }
-    // client->fd = -1 -- good practice apparently?
   }
   free(client->partial_msg);
   free(client);
@@ -51,14 +50,11 @@ int cleanup_client(struct client_info *client){
 
 int remove_all_clients(struct server_state *state){
   pthread_mutex_lock(&state->client_mutex);
-  while(state->client_count > 0){
-    state->client_list[0] = state->client_list[--state->client_count];
-
-    pthread_mutex_unlock(&state->client_mutex);
-    if(cleanup_client(state->client_list[0]) == -1){
+  for(int i = (int)state->client_count - 1; i >= 0; --i){
+    epoll_ctl(state->epoll_fd, EPOLL_CTL_DEL, state->client_list[i]->client_fd, NULL);
+    if(cleanup_client(state->client_list[i]) == -1){
       return -1;
     }
-    pthread_mutex_lock(&state->client_mutex);
   }
   pthread_mutex_unlock(&state->client_mutex);
   return 0;
