@@ -21,7 +21,6 @@ int broadcast(struct server_state *state, struct client_info *sender, uint8_t *m
     struct client_info *current_client = state->client_list[i];
     if(current_client != sender){
       if(current_client->closed == 1){
-        perror("[DEBUG - broadcast]: client already marked for closed, won't broadcast");
         continue;
       }
 
@@ -29,6 +28,7 @@ int broadcast(struct server_state *state, struct client_info *sender, uint8_t *m
       struct msg_packet *packet = create_packet(&out_header, msg, len);
       if(packet == NULL){
         // Error making packet
+        perror("broadcast - create_packet");
         continue;
       }
 
@@ -39,7 +39,6 @@ int broadcast(struct server_state *state, struct client_info *sender, uint8_t *m
       }
 
       if(current_client->epollout_enabled == 0 && current_client->msg_queue.head == packet){
-        printf("[DEBUG - broadcast]: Client %d does not have epoll enabled and its head is the current packet\n", current_client->client_fd);
         if(client_try_write(state->epoll_fd, current_client) == -1){
           current_client->closed = 1;
         }

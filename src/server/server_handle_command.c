@@ -16,7 +16,6 @@ enum CMD_RES server_handle_command(
     char *saveptr
   ){
   enum CMD command = find_command(cmd);
-  printf("[DEBUG - server_handle_command]: Command: %d\n", command);
   switch(command){
     case CMD_LIST:
       return handle_list(state, user);
@@ -35,7 +34,6 @@ enum CMD_RES server_handle_command(
 }
 
 enum CMD_RES handle_list(struct server_state *state, struct client_info *user){
-  printf("Listing\n");
   // Go through the client list, printing sending the names of each client to the sender
   for(size_t i = 0; i < state->client_count; i++){
     // Get client's name and name_len from the list
@@ -66,7 +64,6 @@ enum CMD_RES handle_whisper(
     struct client_info *user, 
     char *saveptr
   ){
-  printf("Whispering\n");
   // Check if we have no whisper target
   if(saveptr == NULL){
     printf("Not enough args\n");

@@ -10,7 +10,7 @@ struct msg_packet *create_packet(struct msg_header *header, uint8_t *payload, si
   // Malloc out the packet data
   uint8_t *packet_data = (uint8_t *)malloc(total);
   if(packet_data == NULL){
-    printf("[DEBUG - msg_packet]: Error making packet data\n");
+    printf("msg_packet - Error making packet data\n");
     return NULL;
   }
 
@@ -21,7 +21,7 @@ struct msg_packet *create_packet(struct msg_header *header, uint8_t *payload, si
   // Create the packet structure
   struct msg_packet *packet = malloc(sizeof(*packet));
   if(packet == NULL){
-  printf("[DEBUG - msg_packet]: Error making packet\n");
+    perror("msg_packet - Error making packet\n");
     free(packet_data);
     return NULL;
   }

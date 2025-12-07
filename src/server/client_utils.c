@@ -9,15 +9,12 @@
 int append_to_client_buffer(struct client_info *client){
   // If message len + bytes read from payload > message cap, expand message cap
   if(client->partial_len + client->payload_bytes_read > client->partial_cap){
-    printf("We are here\n");
     while(client->partial_cap < client->partial_len + client->payload_bytes_read) { 
-      printf("We are doubling\n");
       client->partial_cap *= 2; 
     }
-    printf("We are calling realloc\n");
     client->partial_msg = realloc(client->partial_msg, client->partial_cap);
     if(client->partial_msg == NULL){
-      printf("We have a realloc error\n");
+      perror("client_utils - realloc error");
       return -1;
     }
   }
@@ -83,8 +80,6 @@ int client_enqueue_msg_packet(struct client_info *client,
   // Increase the size of the msg_queue and number of queued messages
   client->msg_queue.queued_bytes += packet->len;
   client->msg_queue.queued_count++;
-
-  printf("[DEBUG - client_utils]: enqueue packet to client: %d\n", client->client_fd);
   return 0;
 
 }

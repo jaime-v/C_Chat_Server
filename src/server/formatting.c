@@ -132,9 +132,6 @@ uint8_t *format_whisper_message(const struct client_info *sender, const uint8_t 
   formatted_msg[index++] = '\n';
   formatted_msg[index] = '\0';
 
-  printf("Formatted msg: %s\n", formatted_msg);
-
-
   // Error check for snprintf
   if(index >= string_len){
     free(formatted_msg);

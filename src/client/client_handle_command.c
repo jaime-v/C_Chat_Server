@@ -19,11 +19,7 @@ enum CMD_RES client_handle_command(int sfd, char *cmd){
 }
 
 enum CMD_RES handle_quit(int sfd /* , struct listen_info *info */){
-  printf("[DEBUG - client_handle_command]: client quitting\n");
   shutdown(sfd, SHUT_RDWR);
-  // We will free info in the client driver
-  // free(info);
-  // info = NULL;
   if(close(sfd) == -1){
     return CMD_WARNING;
   }

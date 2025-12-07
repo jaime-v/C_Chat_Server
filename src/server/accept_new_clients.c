@@ -19,17 +19,16 @@ int accept_new_clients(struct server_state *state){
   for(;;){
     // Accept new client
     int client_fd = accept(state->server_fd, NULL, NULL);
-    printf("[DEBUG - accept_new_clients]: Accepted: %d\n", client_fd);
 
     // Check client errors
     if(client_fd == -1){
       if(errno == EAGAIN || errno == EWOULDBLOCK){
         // We have no more clients to accept
-        perror("No more clients to accept");
+        perror("accept_new_clients - would block");
         return 0;
       } else {
         // We have an actual error
-        perror("We have an actual accept error");
+        perror("accept_new_clients - read error");
         return -1;
       }
     }
@@ -51,7 +50,6 @@ int accept_new_clients(struct server_state *state){
     struct epoll_event ev = {0};
     ev.events = EPOLLIN | EPOLLRDHUP;
     ev.data.ptr = info;
-    printf("[DEBUG accept_new_clients]: putting client %d into epoll\n", info->client_fd);
     if(epoll_ctl(state->epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1){
       perror("accept_new_clients - epoll_ctl");
       return -1;
@@ -62,8 +60,6 @@ int accept_new_clients(struct server_state *state){
       perror("accept_new_clients - add_client_to_list");
       return -1;
     }
-    printf("[DEBUG - accept_new_clients]: client_count: %zu\n", state->client_count);
   }
-  perror("We should not be able to hit this");
   return -1;
 }

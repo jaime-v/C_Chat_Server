@@ -16,8 +16,6 @@ void enable_epollout_for_client(int epoll_fd, struct client_info *client){
     // error
     printf("[DEBUG - epoll_mod]: Error enabling epollout for client %d\n", client->client_fd);
   }
-  printf("[DEBUG - epoll_mod]: Enabling epollout for client %d\n", client->client_fd);
-
 }
 
 void disable_epollout_for_client(int epoll_fd, struct client_info *client){
@@ -34,7 +32,4 @@ void disable_epollout_for_client(int epoll_fd, struct client_info *client){
     printf("[DEBUG - epoll_mod]: Error disabling epollout for client %d\n", client->client_fd);
     // error
   }
-  printf("[DEBUG - epoll_mod]: Disabling epollout for client %d\n", client->client_fd);
-
-
 }
