@@ -1,5 +1,7 @@
 # Set CC and CFLAGS Variables
-CC = gcc-14
+CC = gcc
+# CC = gcc-14
+# dont gcc-14 with docker
 CFLAGS = -Wall -Wextra -Werror -Wpedantic -Wconversion -Wsign-conversion -Wshadow -std=c2x -pthread -fsanitize=address,undefined -g
 INCLUDES = -Iinclude
 

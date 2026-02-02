@@ -18,17 +18,17 @@ struct server_state {
  *  Initializes struct server_state pointed to by state.
  *  state_out is modified internally.
  *
- *  @param state_out    Pointer to server_state struct. 
+ *  @param state_out    Pointer to server_state struct.
  *
  *  @return             0 on success, -1 on failure.
  */
 int server_state_init(struct server_state *state_out);
 
 /**
- *  Cleans up server state. Cleans up each client, destroys the state's mutex, and closes the
- *  server file descriptor.
+ *  Cleans up server state. Cleans up each client, destroys the state's mutex,
+ * and closes the server file descriptor.
  *
- *  @param state        Pointer to server_state struct. 
+ *  @param state        Pointer to server_state struct.
  *
  *  @return             0 on success, -1 on failure.
  */

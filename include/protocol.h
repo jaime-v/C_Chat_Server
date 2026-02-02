@@ -1,11 +1,11 @@
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 #include "io.h"
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #define MSG_TYPE_NORMAL 0x00
-#define MSG_TYPE_ADMIN  0x01
+#define MSG_TYPE_ADMIN 0x01
 #define MSG_TYPE_RANDOM 0x02
 #define MSG_SIZE_LIMIT 65536
 
@@ -28,11 +28,10 @@ struct msg_header {
  */
 ssize_t read_header(int fd, struct msg_header *header_out);
 
-
-
 /**
- * Reads a payload message of size msg_len from socket fd, storing it in payload_out.
- * Returns number of bytes read, or 0 for reading nothing, or -1 for error.
+ * Reads a payload message of size msg_len from socket fd, storing it in
+ * payload_out. Returns number of bytes read, or 0 for reading nothing, or -1
+ * for error.
  *
  * @param fd            File descriptor to read from.
  * @param payload_out   Pointer to string to store payload.
@@ -42,12 +41,10 @@ ssize_t read_header(int fd, struct msg_header *header_out);
  */
 ssize_t read_payload(int fd, char **payload_out, size_t msg_len);
 
-
-
 /**
- * Reads an entire packet from socket fd. Stores header in header_out and payload in
- * payload_out.
- * Returns number of bytes read from payload, or 0 for reading nothing, or -1 for error.
+ * Reads an entire packet from socket fd. Stores header in header_out and
+ * payload in payload_out. Returns number of bytes read from payload, or 0 for
+ * reading nothing, or -1 for error.
  *
  * @param fd            File descriptor to read from.
  * @param header_out    Pointer to struct to store header.
@@ -56,8 +53,6 @@ ssize_t read_payload(int fd, char **payload_out, size_t msg_len);
  * @return              Number of bytes read from payload.
  */
 ssize_t read_packet(int fd, struct msg_header *header_out, char **payload_out);
-
-
 
 /**
  * Writes msg_header header to the socket fd.
@@ -69,8 +64,6 @@ ssize_t read_packet(int fd, struct msg_header *header_out, char **payload_out);
  * @return              Number of bytes written to fd.
  */
 ssize_t write_header(int fd, const struct msg_header *header);
-
-
 
 /**
  * Writes a string payload, of length msg_len, to the socket fd.
@@ -84,10 +77,8 @@ ssize_t write_header(int fd, const struct msg_header *header);
  */
 ssize_t write_payload(int fd, const char *payload, size_t msg_len);
 
-
-
 /**
- * Writes an entire packet to socket fd. 
+ * Writes an entire packet to socket fd.
  * Returns number of bytes written from payload, or -1 on error.
  *
  * @param fd            File descriptor to read from.
@@ -97,13 +88,8 @@ ssize_t write_payload(int fd, const char *payload, size_t msg_len);
  *
  * @return              Number of bytes written to fd from payload.
  */
-ssize_t write_packet(
-    int fd, 
-    const struct msg_header *header, 
-    const char *payload, 
-    size_t msg_len
-);
-
+ssize_t write_packet(int fd, const struct msg_header *header,
+                     const char *payload, size_t msg_len);
 
 /**
  *  Initializes header_out with msg_len, msg_type, and msg_done.
@@ -116,12 +102,7 @@ ssize_t write_packet(
  *
  *  @return             0 on success, -1 on failure
  */
-int create_header(
-    struct msg_header *header_out,
-    size_t msg_len,
-    uint8_t msg_type,
-    bool msg_done
-);
-
+int create_header(struct msg_header *header_out, size_t msg_len,
+                  uint8_t msg_type, bool msg_done);
 
 #endif

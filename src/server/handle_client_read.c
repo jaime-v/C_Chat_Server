@@ -1,19 +1,19 @@
 #include "handle_client_read.h"
+#include "client_utils.h"
 #include "process_payload.h"
 #include "utils.h"
-#include "client_utils.h"
+#include <arpa/inet.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <arpa/inet.h>
 
-int handle_client_read(struct server_state *state, struct client_info *info){
-  for(;;){
-    if(info->state == READ_HEADER){
-      ssize_t bytes_read = read(info->client_fd,
-                                info->header_buffer + info->header_bytes_read,
-                                sizeof(struct msg_header) - info->header_bytes_read);
-      if(bytes_read == 0){
+int handle_client_read(struct server_state *state, struct client_info *info) {
+  for (;;) {
+    if (info->state == READ_HEADER) {
+      ssize_t bytes_read =
+          read(info->client_fd, info->header_buffer + info->header_bytes_read,
+               sizeof(struct msg_header) - info->header_bytes_read);
+      if (bytes_read == 0) {
         // Shouldn't be happening unless we get a shutdown
         // Assume client closed connection
         // Remove client
@@ -21,9 +21,8 @@ int handle_client_read(struct server_state *state, struct client_info *info){
         return -1;
       }
 
-
-      if(bytes_read < 0){
-        if(errno == EAGAIN || errno == EWOULDBLOCK){
+      if (bytes_read < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
           // No more data to read
           perror("handle_client_read - Got would block error");
           return 0;
@@ -35,28 +34,30 @@ int handle_client_read(struct server_state *state, struct client_info *info){
 
       info->header_bytes_read += (size_t)bytes_read;
 
-      if(info->header_bytes_read < sizeof(struct msg_header)){
+      if (info->header_bytes_read < sizeof(struct msg_header)) {
         // Exit early because we need more header bytes
         printf("too little header bytes, returning early\n");
         return 0;
       }
 
-      if(info->header_bytes_read > sizeof(struct msg_header)){
+      if (info->header_bytes_read > sizeof(struct msg_header)) {
         // Exit early because we have too many header bytes
         perror("too many header bytes somehow");
         return -1;
       }
 
-      // If we reach this point, we can parse the header because we have received all the bytes
+      // If we reach this point, we can parse the header because we have
+      // received all the bytes
       struct msg_header *header = (struct msg_header *)info->header_buffer;
 
       info->expected_payload_len = ntohl(header->msg_len);
       info->msg_type = header->msg_type;
       info->msg_done = header->msg_done;
 
-      if(info->expected_payload_len > 16384){
-        printf("handle_client_read - expected payload for client %d is too large\n",
-            info->client_fd);
+      if (info->expected_payload_len > 16384) {
+        printf("handle_client_read - expected payload for client %d is too "
+               "large\n",
+               info->client_fd);
         return -1;
       }
 
@@ -69,21 +70,21 @@ int handle_client_read(struct server_state *state, struct client_info *info){
       */
 
       // reset for payload
-      info->state = READ_PAYLOAD; 
+      info->state = READ_PAYLOAD;
       info->payload_bytes_read = 0;
 
-    } else if (info->state == READ_PAYLOAD){
-      ssize_t bytes_read = read(info->client_fd,
-                                info->payload_buffer + info->payload_bytes_read,
-                                info->expected_payload_len - info->payload_bytes_read);
-      if(bytes_read == 0){
+    } else if (info->state == READ_PAYLOAD) {
+      ssize_t bytes_read =
+          read(info->client_fd, info->payload_buffer + info->payload_bytes_read,
+               info->expected_payload_len - info->payload_bytes_read);
+      if (bytes_read == 0) {
         // Possibility of payload with 0 bytes
         // So we probably just leave it
         perror("ZERO payload");
       }
 
-      if(bytes_read < 0){
-        if(errno == EAGAIN || errno == EWOULDBLOCK){
+      if (bytes_read < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
           // No more data to read
           perror("handle_client_read - got a would block error in payload");
           return 0;
@@ -93,36 +94,44 @@ int handle_client_read(struct server_state *state, struct client_info *info){
         }
       }
 
-      info->payload_bytes_read += (size_t) bytes_read;
+      info->payload_bytes_read += (size_t)bytes_read;
 
-      if(info->payload_bytes_read < info->expected_payload_len){
+      /* DEBUG */
+      printf("[DEBUG]: We are expecting: %zu bytes\n",
+             (size_t)info->expected_payload_len);
+      printf("[DEBUG]: We have: %zu bytes\n", info->payload_bytes_read);
+
+      if (info->payload_bytes_read < info->expected_payload_len) {
         // Exit early because we need more payload bytes
-        perror("Exiting early becase we need more payload bytes");
+        perror("[INFO]: Exiting early becase we need more payload bytes");
         return 0;
       }
 
-      if(info->payload_bytes_read > info->expected_payload_len){
-        // Exit early because we need more payload bytes
-        perror("Too many payload bytes somehow");
+      if (info->payload_bytes_read > info->expected_payload_len) {
+        // Exit early because we have too many payload bytes
+        perror("[ERROR]: Too many payload bytes somehow");
         return -1;
       }
 
       // If we reach this point, then our payload should be complete
       // Put the stuff into the client's big buffer
-      if(append_to_client_buffer(info) == -1){
-        perror("append_to_client_buffer");
+      if (append_to_client_buffer(info) == -1) {
+        perror("[WARNING]: append_to_client_buffer");
       }
       // Check if the msg is done
-      if(info->msg_done){
-        uint8_t *payload_copy = copy_buffer(info->partial_msg, info->partial_len + 1);
+      if (info->msg_done) {
+        uint8_t *payload_copy =
+            copy_buffer(info->partial_msg, info->partial_len + 1);
         // Process message
         int payload_result = process_payload(state, info, payload_copy);
         free(payload_copy);
-        if(payload_result == -1){
-          perror("handle_client_read - Disconnect - process_payload returned error");
+        if (payload_result == -1) {
+          perror("handle_client_read - Disconnect - process_payload returned "
+                 "error");
           return -1;
         }
-        // Reset partial_len to 0 so we can overwrite the buffer for next message
+        // Reset partial_len to 0 so we can overwrite the buffer for next
+        // message
         info->partial_len = 0;
       }
 
