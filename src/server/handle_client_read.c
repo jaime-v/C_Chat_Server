@@ -25,7 +25,7 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
       if (bytes_read < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
           // No more data to read
-          perror("handle_client_read - Got would block error");
+          // perror("handle_client_read - Got would block error");
           return 0;
         } else {
           perror("handle_client_read - actual read error");
@@ -72,12 +72,16 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
 
       // reset for payload
       info->state = READ_PAYLOAD;
+      info->header_bytes_read = 0;
       info->payload_bytes_read = 0;
-
     } else if (info->state == READ_PAYLOAD) {
       ssize_t bytes_read =
           read(info->client_fd, info->payload_buffer + info->payload_bytes_read,
                info->expected_payload_len - info->payload_bytes_read);
+
+      printf("[INFO: handle_client_read]: info->expected_payload_len: %u\n",
+             info->expected_payload_len);
+      printf("[INFO: handle_client_read]: bytes_read: %zu\n", bytes_read);
       if (bytes_read == 0) {
         // Possibility of payload with 0 bytes
         // So we probably just leave it
@@ -87,7 +91,7 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
       if (bytes_read < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
           // No more data to read
-          perror("handle_client_read - got a would block error in payload");
+          // perror("handle_client_read - got a would block error in payload");
           return 0;
         } else {
           perror("handle_client_read - read payload error");
@@ -121,6 +125,8 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
       }
       // Check if the msg is done
       if (info->msg_done) {
+        printf("[DEBUG - handle_client_read]: info->partial_len: %zu\n",
+               info->partial_len);
         uint8_t *payload_copy =
             copy_buffer(info->partial_msg, info->partial_len + 1);
         // Process message
@@ -133,13 +139,16 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
         }
         // Reset partial_len to 0 so we can overwrite the buffer for next
         // message
-        info->partial_len = 0;
+        if (clear_client_buffer(info) == -1) {
+          perror("handle_client_read - error clearing buffer");
+        }
       }
 
       // If it's not done, then we just switch back to reading the next header
       // Reset header reading
       info->state = READ_HEADER;
       info->header_bytes_read = 0;
+      info->expected_payload_len = 0;
     } else {
       // Somehow not reading header or payload
       perror("This should not be possible");

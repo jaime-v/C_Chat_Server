@@ -24,3 +24,13 @@ As of Feb 1 2026:
         and I am writing to something that is already closed. Occurs when enqueuing
         a message packet to client's message queue
 
+I think solution for problem 1 is to add string safety when allocating 
+instead of with the copy. 
+Currently, append_to_client_buffer allocates exactly enough memory for the message in
+client_info->partial_msg.
+Then copy_buffer makes a copy of that partial_msg and adds 1 to its size for the null 
+terminator.
+So it's possible we try to copy something like 8193 bytes from our src to our dest,
+but that can result in error, even though we modify that last byte to be '\0'.
+So, solution is to add that string safety when allocating memory in append_to_client_buffer.
+
