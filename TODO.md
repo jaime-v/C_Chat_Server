@@ -15,3 +15,12 @@ As of Dec 6 2025:
         not sure what the exact issue is though.
     * I think that's it?
 
+As of Feb 1 2026:
+    Currently working on two errors
+    1. Read of 8193, when copying buffers. Quite the exact number. 
+        I think it has to do with my buffer not checking properly for a payload
+        that is > BUF_SIZE.
+    2. Writes to zero page. I think this is because I somehow have a race condition
+        and I am writing to something that is already closed. Occurs when enqueuing
+        a message packet to client's message queue
+

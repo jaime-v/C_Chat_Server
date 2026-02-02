@@ -1,11 +1,14 @@
 #ifndef CLIENT_INFO_INIT_H
 #define CLIENT_INFO_INIT_H
 
+#include "client_info.h"
+
 /**
  * Initialize the client info pointed to by client_out.
  *
  * @param client_out  Pointer to struct to store the client info.
- * @param client_fd   File descriptor that is associated with a particular client.
+ * @param client_fd   File descriptor that is associated with a particular
+ * client.
  *
  * @return            0 on success, -1 on failure
  */

@@ -1,12 +1,11 @@
-#include "client_info.h"
 #include "client_info_init.h"
 #include "common_header.h"
 #include <stdlib.h>
 
-int client_info_init(struct client_info *client_out, int client_fd){
+int client_info_init(struct client_info *client_out, int client_fd) {
   // client_out->cfd = client_fd;
   client_out->partial_msg = (uint8_t *)malloc(BUF_SIZE);
-  if(client_out->partial_msg == NULL){
+  if (client_out->partial_msg == NULL) {
     return -1;
   }
   client_out->partial_len = 0;
@@ -29,6 +28,10 @@ int client_info_init(struct client_info *client_out, int client_fd){
   client_out->epollout_enabled = 0;
   client_out->closed = 0;
 
+  client_out->msg_queue.head = NULL;
+  client_out->msg_queue.tail = NULL;
+  client_out->msg_queue.queued_bytes = 0;
+  client_out->msg_queue.queued_count = 0;
+
   return 0;
 }
-

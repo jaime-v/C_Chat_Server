@@ -1,5 +1,6 @@
 #include "handle_client_read.h"
 #include "client_utils.h"
+#include "common_header.h"
 #include "process_payload.h"
 #include "utils.h"
 #include <arpa/inet.h>
@@ -54,7 +55,7 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
       info->msg_type = header->msg_type;
       info->msg_done = header->msg_done;
 
-      if (info->expected_payload_len > 16384) {
+      if (info->expected_payload_len > BUF_SIZE) {
         printf("handle_client_read - expected payload for client %d is too "
                "large\n",
                info->client_fd);
@@ -96,10 +97,10 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
 
       info->payload_bytes_read += (size_t)bytes_read;
 
-      /* DEBUG */
-      printf("[DEBUG]: We are expecting: %zu bytes\n",
-             (size_t)info->expected_payload_len);
-      printf("[DEBUG]: We have: %zu bytes\n", info->payload_bytes_read);
+      // DEBUG
+      // printf("[DEBUG]: We are expecting: %zu bytes\n",
+      //        (size_t)info->expected_payload_len);
+      // printf("[DEBUG]: We have: %zu bytes\n", info->payload_bytes_read);
 
       if (info->payload_bytes_read < info->expected_payload_len) {
         // Exit early because we need more payload bytes

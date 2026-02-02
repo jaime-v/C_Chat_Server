@@ -40,8 +40,7 @@ int store_client_name(struct client_info *client);
  *
  *  @return         0 on success, -1 on failure
  */
-int client_enqueue_msg_packet(struct client_info *client, 
-                              struct msg_packet *packet, 
-                              size_t msg_size_limit);
+int client_enqueue_msg_packet(struct client_info *client,
+                              struct msg_packet *packet, size_t msg_size_limit);
 
 #endif
