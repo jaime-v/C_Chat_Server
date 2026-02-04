@@ -128,7 +128,7 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
         printf("[DEBUG - handle_client_read]: info->partial_len: %zu\n",
                info->partial_len);
         uint8_t *payload_copy =
-            copy_buffer(info->partial_msg, info->partial_len + 1);
+            copy_buffer(info->partial_msg, info->partial_len);
         // Process message
         int payload_result = process_payload(state, info, payload_copy);
         free(payload_copy);

@@ -7,10 +7,10 @@
 #include <stdio.h>
 
 int append_to_client_buffer(struct client_info *client) {
+  size_t needed_bytes = client->partial_len + client->payload_bytes_read;
   // If message len + bytes read from payload > message cap, expand message cap
-  if (client->partial_len + client->payload_bytes_read > client->partial_cap) {
-    while (client->partial_cap <
-           client->partial_len + client->payload_bytes_read) {
+  if (needed_bytes > client->partial_cap) {
+    while (client->partial_cap < needed_bytes) {
       client->partial_cap *= 2;
     }
     client->partial_msg = realloc(client->partial_msg, client->partial_cap);

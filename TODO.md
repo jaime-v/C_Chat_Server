@@ -34,3 +34,18 @@ So it's possible we try to copy something like 8193 bytes from our src to our de
 but that can result in error, even though we modify that last byte to be '\0'.
 So, solution is to add that string safety when allocating memory in append_to_client_buffer.
 
+
+Feb 4 update:
+Tried fixing the bug by refining the buffer copying, making sure it only does memcpy
+on the proper amount of bytes, but also malloc'ing 1 extra byte for the '\0' null
+terminator before going into string formatting.
+
+im just gonna put a pin in this for now. i have no clue whats happening.
+getting a memory leak now from client_info_init, but i cant reproduce the error.
+
+Debug prints on server arent happening in real-time anymore, it waits on client
+disconnect to print everything. which i have no idea why it does that.
+
+idk
+at least it seems to run okay when used as intended.
+disappointing
