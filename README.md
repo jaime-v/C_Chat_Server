@@ -54,5 +54,3 @@ gcc <fuzzer_file.c>
 docker container prune
 docker image prune
 ```
-I think this should be done because docker creates new containers every time I
-spin up a new server, and a new image whenever I build a new image

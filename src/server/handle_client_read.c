@@ -11,6 +11,7 @@
 int handle_client_read(struct server_state *state, struct client_info *info) {
   for (;;) {
     if (info->state == READ_HEADER) {
+      printf("[INFO: handle_client_read]: Reading header\n");
       ssize_t bytes_read =
           read(info->client_fd, info->header_buffer + info->header_bytes_read,
                sizeof(struct msg_header) - info->header_bytes_read);
@@ -47,6 +48,7 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
         return -1;
       }
 
+      printf("[INFO: handle_client_read]: Have all header bytes\n");
       // If we reach this point, we can parse the header because we have
       // received all the bytes
       struct msg_header *header = (struct msg_header *)info->header_buffer;
@@ -74,7 +76,9 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
       info->state = READ_PAYLOAD;
       info->header_bytes_read = 0;
       info->payload_bytes_read = 0;
+      printf("[INFO: handle_client_read]: Switching to read payload\n");
     } else if (info->state == READ_PAYLOAD) {
+      printf("[INFO: handle_client_read]: Reading payload\n");
       ssize_t bytes_read =
           read(info->client_fd, info->payload_buffer + info->payload_bytes_read,
                info->expected_payload_len - info->payload_bytes_read);
@@ -118,6 +122,8 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
         return -1;
       }
 
+      printf("[DEBUG - handle_client_read]: have all payload bytes\n");
+
       // If we reach this point, then our payload should be complete
       // Put the stuff into the client's big buffer
       if (append_to_client_buffer(info) == -1) {
@@ -125,10 +131,12 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
       }
       // Check if the msg is done
       if (info->msg_done) {
+        printf("[DEBUG - handle_client_read]: msg_done flag\n");
         printf("[DEBUG - handle_client_read]: info->partial_len: %zu\n",
                info->partial_len);
         uint8_t *payload_copy =
             copy_buffer(info->partial_msg, info->partial_len);
+        printf("[DEBUG - handle_client_read]: buffer copied\n");
         // Process message
         int payload_result = process_payload(state, info, payload_copy);
         free(payload_copy);
@@ -142,6 +150,7 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
         if (clear_client_buffer(info) == -1) {
           perror("handle_client_read - error clearing buffer");
         }
+        printf("[DEBUG - handle_client_read]: buffer cleared\n");
       }
 
       // If it's not done, then we just switch back to reading the next header
@@ -149,6 +158,7 @@ int handle_client_read(struct server_state *state, struct client_info *info) {
       info->state = READ_HEADER;
       info->header_bytes_read = 0;
       info->expected_payload_len = 0;
+      printf("[DEBUG - handle_client_read]: Switching to read header\n");
     } else {
       // Somehow not reading header or payload
       perror("This should not be possible");
