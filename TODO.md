@@ -15,4 +15,4 @@
         72 - client->msg_queue.tail->next = packet;
         ```
         not sure what the exact issue is though.
-    * Sometimes memory leaks when fuzzing many clients, not consistenly reproducable yet
+    * Sometimes memory leaks when fuzzing many clients, not consistently reproducable yet
